@@ -44,11 +44,12 @@ def doApiRequest(server, type, append=""):
             need_download = True
     if need_download:
         r = requests.get('http://'+server+'/api/'+type+'.xml'+append)
-        cache.write(server+"_"+type+append.encode("base64"), r.content)
+        cache.write(server+"_"+type+append.encode("base64"), r.text)
         api_data = r.text
     return api_data
 
 def getLxmlRoot(data):
+    # lxml seems to have a problem with unicode-strings so do this strange conversion
     data = bytes(bytearray(data, encoding="utf-8"))
     return etree.fromstring(data)
 

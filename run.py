@@ -103,7 +103,7 @@ def getPlayerInfo(id=False, name=False):
     return (True, player_info)
 
 if args.player:
-    (ret, player_info) = getPlayerInfo(name=args.player)
+    (ret, player_info) = getPlayerInfo(name=args.player.strip())
     if not ret:
         print player_info
         sys.exit(1)
@@ -143,7 +143,7 @@ if args.player:
 
 elif args.alliance:
     root = getLxmlRoot(doApiRequest(args.server, "alliances"))
-    el = root.xpath(".//alliance[re:test(@tag, '^"+args.alliance+"$', 'i')]",
+    el = root.xpath(".//alliance[re:test(@tag, '^"+args.alliance.strip()+"$', 'i')]",
             namespaces={"re": "http://exslt.org/regular-expressions"})
     if len(el) == 0:
         print "No match"

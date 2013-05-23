@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import logging
 from lxml import etree
 import sys
+import Levenshtein
 
 logger = logging.getLogger('urlCache')
 
@@ -53,15 +54,23 @@ def getLxmlRoot(data):
     data = bytes(bytearray(data, encoding="utf-8"))
     return etree.fromstring(data)
 
+def findMatch(elements, attr, name):
+    name = name.lower()
+    all_names = []
+    for el in elements:
+        all_names.append((el, Levenshtein.distance(el.get(attr).lower(), name)))
+    el = sorted(all_names, key=lambda x: x[1])[0][0]
+    return (el, Levenshtein.ratio(el.get("name").lower(), name))
 
 def getPlayerInfo(id=False, name=False):
     if not id:
         root = getLxmlRoot(doApiRequest(args.server, "players"))
-        el = root.xpath(".//player[re:test(@name, '^"+name+"$', 'i')]",
-                namespaces={"re": "http://exslt.org/regular-expressions"})
-        if len(el) == 0:
+        el, sim = findMatch(root.xpath(".//player"), "name", name)
+        if sim == 0.0:
             return (False, "No match")
-        id = el[0].get("id")
+        if sim != 1.0:
+            print "%s - similarity:%.2f" % (el.get("name"), sim)
+        id = el.get("id")
     playerData = doApiRequest(args.server, "playerData", "?id="+str(id))
     if playerData == "Player not found.":
         return (False, "Player not found.")
@@ -143,12 +152,12 @@ if args.player:
 
 elif args.alliance:
     root = getLxmlRoot(doApiRequest(args.server, "alliances"))
-    el = root.xpath(".//alliance[re:test(@tag, '^"+args.alliance.strip()+"$', 'i')]",
-            namespaces={"re": "http://exslt.org/regular-expressions"})
-    if len(el) == 0:
+    el, sim = findMatch(root.xpath(".//alliance"), "tag", args.alliance.strip())
+    if sim == 0.0:
         print "No match"
         sys.exit(1)
-    el = el[0]
+    if sim != 1.0:
+        print "%s - similarity:%.2f" % (el.get("tag"), sim)
     for i in ["name", "homepage", "logo", "open"]:
         if el.get(i):
             print "%s: %s   " % (i, el.get(i)),

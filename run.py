@@ -17,7 +17,8 @@ parser = argparse.ArgumentParser(description='get info from ogame api',
 parser.add_argument('--server', '-s', type=str, help='server like uni117.ogame.de')
 parser.add_argument('--player', '-p', type=str, help='playername')
 parser.add_argument('--alliance', '-a', type=str, help='alliance tag')
-parser.add_argument('--quick', '-q', type=int, help='quick')
+parser.add_argument('--quick', '-q', type=int, help='shortened output')
+parser.add_argument('--find', '-f', type=int, help='lists $count matches (just the names)')
 args = parser.parse_args()
 
 cache = FileCache("var")
@@ -58,14 +59,13 @@ def findMatch(elements, attr, name):
     name = name.lower()
     all_names = []
     for el in elements:
-        all_names.append((el, Levenshtein.distance(el.get(attr).lower(), name)))
-    el = sorted(all_names, key=lambda x: x[1])[0][0]
-    return (el, Levenshtein.ratio(el.get("name").lower(), name))
+        all_names.append((el, Levenshtein.ratio(el.get(attr).lower(), name)))
+    return sorted(all_names, key=lambda x: x[1], reverse = True)
 
-def getPlayerInfo(id=False, name=False):
+def getPlayerInfo(id=False, name=False, find=False):
     if not id:
         root = getLxmlRoot(doApiRequest(args.server, "players"))
-        el, sim = findMatch(root.xpath(".//player"), "name", name)
+        el, sim = findMatch(root.xpath(".//player"), "name", name)[0]
         if sim == 0.0:
             return (False, "No match")
         if sim != 1.0:
@@ -111,7 +111,29 @@ def getPlayerInfo(id=False, name=False):
                 }
     return (True, player_info)
 
-if args.player:
+if args.find:
+    find = args.find
+    if find > 50:
+        find = 50
+    if find < 1:
+        find = 1
+    if args.player:
+        root = getLxmlRoot(doApiRequest(args.server, "players"))
+        matches = findMatch(root.xpath(".//player"), "name", args.player)
+        for i in range(0, find):
+            el, sim = matches[i]
+            print "%s - %.2f" % (el.get("name"), sim),
+            if not args.quick or i%2 == 1:
+                print ""
+    elif args.alliance:
+        root = getLxmlRoot(doApiRequest(args.server, "alliances"))
+        matches = findMatch(root.xpath(".//alliance"), "tag", args.alliance.strip())
+        for i in range(0, find):
+            el, sim = matches[i]
+            print "%s - %.2f" % (el.get("tag"), sim),
+            if not args.quick or i%2 == 1:
+                print ""
+elif args.player:
     (ret, player_info) = getPlayerInfo(name=args.player.strip())
     if not ret:
         print player_info
@@ -152,7 +174,7 @@ if args.player:
 
 elif args.alliance:
     root = getLxmlRoot(doApiRequest(args.server, "alliances"))
-    el, sim = findMatch(root.xpath(".//alliance"), "tag", args.alliance.strip())
+    el, sim = findMatch(root.xpath(".//alliance"), "tag", args.alliance.strip())[0]
     if sim == 0.0:
         print "No match"
         sys.exit(1)

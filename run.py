@@ -28,12 +28,12 @@ if args.find:
     if find < 1:
         find = 1
     if args.player:
-        api.findPlayer(args.player, find)
+        print "".join(api.findPlayer(args.player, find))
     elif args.alliance:
-        api.findAlliance(args.alliance, find)
+        print "".join(api.findAlliance(args.alliance, find))
 elif args.player:
-    api.getPlayerString(args.player)
+    print "".join(api.getPlayerString(args.player))
 elif args.alliance:
-    api.getAllianceString(args.alliance)
+    print "".join(api.getAllianceString(args.alliance))
 else:
     print "too few arguments"

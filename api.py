@@ -6,7 +6,6 @@ from helper import textextract
 from datetime import datetime, timedelta
 import logging
 from lxml import etree
-import sys
 import Levenshtein
 
 logger = logging.getLogger('urlCache')
@@ -57,17 +56,16 @@ class Api(object):
         name = name.lower()
         all_names = []
         for el in elements:
-            all_names.append((el, Levenshtein.ratio(el.get(attr).lower(), name)))
+            all_names.append((el, Levenshtein.ratio(el.get(attr).decode("utf-8").lower(), name)))
         return sorted(all_names, key=lambda x: x[1], reverse = True)
 
     def getPlayerInfo(self, id=False, name=False, find=False):
+        sim = 1.0
         if not id:
             root = self._getLxmlRoot(self._doApiRequest("players"))
             el, sim = self._findMatch(root.xpath(".//player"), "name", name)[0]
             if sim == 0.0:
                 return (False, "No match")
-            if sim != 1.0:
-                print "%s - similarity:%.2f" % (el.get("name"), sim)
             id = el.get("id")
         playerData = self._doApiRequest("playerData", "?id="+str(id))
         if playerData == "Player not found.":
@@ -78,6 +76,7 @@ class Api(object):
 
         dataEl = root.xpath("/playerData")[0]
         player_info["name"] = dataEl.get("name")
+        player_info["sim"] = sim
         player_info["id"] = dataEl.get("id")
         player_info["serverId"] = dataEl.get("serverId")
         player_info["timestamp"] = dataEl.get("timestamp")
@@ -111,78 +110,87 @@ class Api(object):
 
 
     def findPlayer(self, name, find):
+        retStr = []
         root = self._getLxmlRoot(self._doApiRequest("players"))
         matches = self._findMatch(root.xpath(".//player"), "name", name.strip())
         for i in range(0, find):
             el, sim = matches[i]
-            print "%s - %.2f" % (el.get("name"), sim),
+            retStr.append("%s - %.2f" % (el.get("name"), sim))
             if not self.quick or i%2 == 1:
-                print ""
+                retStr.append("\n")
+        return retStr
+
     def findAlliance(self, tag, find):
+        retStr = []
         root = self._getLxmlRoot(self._doApiRequest("alliances"))
         matches = self._findMatch(root.xpath(".//alliance"), "tag", tag.strip())
         for i in range(0, find):
             el, sim = matches[i]
-            print "%s - %.2f" % (el.get("tag"), sim),
+            retStr.append("%s - %.2f" % (el.get("tag"), sim))
             if not self.quick or i%2 == 1:
-                print ""
+                retStr.append("\n")
+        return retStr
 
     def getPlayerString(self, name):
+        retStr = []
         (ret, player_info) = self.getPlayerInfo(name=name.strip())
         if not ret:
-            print player_info
-            sys.exit(1)
+            retStr.append(player_info)
+            return retStr
+        if player_info["sim"] != 1.0:
+            retStr.append("%s - similarity:%.2f\n" % (player_info["name"], player_info["sim"]))
 
         type_to_name = ["Total", "Economy", "Research", "Military", "Military Built", "Military Destroyed", "Military Lost", "Honor"]
         if self.quick:
             type = 0
             position = player_info["position"][type]
-            print "%s: %04d - %d  " % (type_to_name[type], position["position"], position["score"]),
+            retStr.append("%s: %04d - %d  " % (type_to_name[type], position["position"], position["score"]))
             if self.server in self.ogniter_mapping:
-                print "http://www.ogniter.org/de/%d/player/%d" % (self.ogniter_mapping[self.server], int(player_info["id"]))
+                retStr.append("http://www.ogniter.org/de/%d/player/%d\n" % (self.ogniter_mapping[self.server], int(player_info["id"])))
             else:
-                print ""
+                retStr.append("\n")
         else:
             for type in player_info["position"]:
                 position = player_info["position"][type]
-                print "%s: %04d - %d" % (type_to_name[type].ljust(18), position["position"], position["score"])
+                retStr.append("%s: %04d - %d\n" % (type_to_name[type].ljust(18), position["position"], position["score"]))
         if self.quick:
             i = 0
             for planet in player_info["planets"]:
                 i += 1
-                print "%s %s  " % (planet[0].ljust(8), planet[1]),
+                retStr.append("%s %s  " % (planet[0].ljust(8), planet[1]))
                 if i%2 == 0:
-                    print ""
+                    retStr.append("\n")
             if i > 1 and i%2 != 0:
-                print ""
+                retStr.append("\n")
         else:
             for planet in player_info["planets"]:
-                print "%s %s" % (planet[0].ljust(8), planet[1])
+                retStr.append("%s %s\n" % (planet[0].ljust(8), planet[1]))
         if not player_info["ally"]:
-            print "No ally"
+            retStr.append("No ally\n")
         else:
-            print "%s - %s" % (player_info["ally"]["tag"], player_info["ally"]["name"])
-
+            retStr.append("%s - %s\n" % (player_info["ally"]["tag"], player_info["ally"]["name"]))
+        return retStr
 
     def getAllianceString(self, tag):
+        retStr = []
         root = self._getLxmlRoot(self._doApiRequest("alliances"))
         el, sim = self._findMatch(root.xpath(".//alliance"), "tag", tag.strip())[0]
         if sim == 0.0:
-            print "No match"
-            sys.exit(1)
+            retStr.append("No match\n")
+            return retStr
         if sim != 1.0:
-            print "%s - similarity:%.2f" % (el.get("tag"), sim)
+            retStr.append("%s - similarity:%.2f\n" % (el.get("tag"), sim))
         for i in ["name", "homepage", "logo", "open"]:
             if el.get(i):
-                print "%s: %s   " % (i, el.get(i)),
+                retStr.append("%s: %s   " % (i, el.get(i)))
                 if not self.quick:
-                    print ""
+                    retStr.append("\n")
         if self.server in self.ogniter_mapping:
-            print "http://www.ogniter.org/de/%d/alliance/%d" % (self.ogniter_mapping[self.server], int(el.get("id"))),
+            retStr.append("http://www.ogniter.org/de/%d/alliance/%d" % (self.ogniter_mapping[self.server], int(el.get("id"))))
             if not self.quick:
-                print ""
+                retStr.append("\n")
         if self.quick:
-            print "players: %d" % (len(el.xpath(".//player")))
+            retStr.append("players: %d\n" % (len(el.xpath(".//player"))))
         players = []
         for playerEl in el.xpath(".//player"):
             (ret, player_info) = self.getPlayerInfo(id=playerEl.get("id"))
@@ -193,14 +201,13 @@ class Api(object):
         if self.quick:
             for player in players:
                 i+=1
-                print "%s %s %d %s   " % (str(i), player[0], player[1], player[2]["planets"][0][0]),
+                retStr.append("%s %s %d %s   " % (str(i), player[0], player[1], player[2]["planets"][0][0]))
                 if i%2==0:
-                    print ""
+                    retStr.append("\n")
                 if i == 4:
                     break
         else:
             for player in players:
                 i+=1
-                print "%s %s %d %s" % (str(i).ljust(2), player[0], player[1], player[2]["planets"][0][0])
-
-
+                retStr.append("%s %s %d %s\n" % (str(i).ljust(2), player[0], player[1], player[2]["planets"][0][0]))
+        return retStr

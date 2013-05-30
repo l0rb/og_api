@@ -30,6 +30,7 @@ The triggerlist can look like this:
     -publics -nocase -channels '#yourchan' -regexp '^alliance ([0-9a-zA-Z]+[0-9a-zA-Z\-\.\ ]+)$' -command 'exec -o /home/balrok/irssi/og_api/run.py -s uni1.ogame.de -a "$1" -q 1' 
     -publics -nocase -channels '#yourchan' -regexp '^aalliance ([0-9a-zA-Z]+[0-9a-zA-Z\-\.\ ]+)$' -command 'exec -o /home/balrok/irssi/og_api/run.py -s uni1.ogame.de -a "$1"' 
 
+This has a problem, that the regex is very defensive, so a user won't execute any bash scripts through escaping from "$1"
 
-Please use it with caution and report any bugs you find :)
-Also you might see, that not all possible playernames and alliance tags will work this is because I don't want to allow .*
+
+Another method is to use the ircbot.py which is provided

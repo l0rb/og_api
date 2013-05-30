@@ -58,11 +58,12 @@ def realy_handle_command(connection, e, command):
         connection.privmsg(target, u"!aplayer bzw. aalliance - gibt erweiterte infos")
         connection.privmsg(target, u"!fplayer bzw. falliance - gibt 6 spieler/allianz nach Ähnlichkeit zurück")
         connection.privmsg(target, u"!which met kris deut [plasma] [temp] [kurs] - gibt Vorschlag welche Mine am besten zu bauen ist - help which für mehr")
+        connection.privmsg(target, u"!awhich same as which, but a bit more detailed")
     elif command == "help which":
         connection.privmsg(target, u"Beispielaufruf: !which 18 15 12 für met=18,kris=15 und deut=12 - plasmatech=0 und maximale temperatur=50 da nicht angegeben, kurs=2:1:1")
         connection.privmsg(target, u"Beispielaufruf: !which 18 15 12 3 45 3:2:1 nun ist plasma=3, temp=45 und der kurs 3:2:1")
 
-    elif command.startswith("which "):
+    elif command.startswith("which ") or command.startswith("awhich"):
         args = command.split(" ")
         plasma = 0
         temp = 50
@@ -82,8 +83,18 @@ def realy_handle_command(connection, e, command):
             print mse
         import Constants
         reload(Constants)
-        bId = Constants.which(met, kris, deut, plasma, temp, mse)
-        msg = "Am besten baust du: %s" % Constants.buildLabels[bId]
-        connection.privmsg(target, msg)
-
-
+        if command.startswith("which "):
+            bId = Constants.which(met, kris, deut, plasma, temp, mse)
+            msg = "Am besten baust du: %s" % Constants.buildLabels[bId]
+            connection.privmsg(target, msg)
+        else:
+            t = Constants.buildingTopList({1:met, 2:kris, 3:deut}, {122:plasma}, temp, mse)
+            i = 0
+            for build in t:
+                i+=1
+                bId = build["bId"]
+                atime = build["atime"]
+                import datetime
+                atime = str(datetime.timedelta(seconds=atime))
+                msg = "%d: %s %s" % (i, Constants.buildLabels[bId], atime)
+                connection.privmsg(target, msg)

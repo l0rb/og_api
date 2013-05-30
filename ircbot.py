@@ -71,14 +71,8 @@ class TestBot(irc.bot.SingleServerIRCBot):
             self.dcc_connect(address, port)
 
     def do_command(self, e, cmd):
-        try:
-            reload(irc_handler)
-            irc_handler.handle_command(self.connection, e, cmd)
-        except Exception,e:
-            print e
-            print "error"
-        #nick = e.source.nick
-        #c = self.connection
+        reload(irc_handler)
+        irc_handler.handle_command(self.connection, e, cmd)
 
         if cmd == "disconnect":
             self.disconnect()

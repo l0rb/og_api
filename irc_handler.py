@@ -10,13 +10,17 @@ def handle_command(connection, e, command):
     #    except:
     #        pass
     try:
+        if command[0] != '!':
+            return
+        command = command[1:]
         realy_handle_command(connection, e, command)
     except Exception, ex:
         target = e.target
         if e.type == "privmsg":
             target = e.source.nick
         try:
-            connection.privmsg(target, u"Du hast einen Fehler verursacht: %s" % str(ex))
+            #connection.privmsg(e.source.nick, u"Du hast einen Fehler verursacht: %s" % str(ex))
+            connection.privmsg(target, u"Fehler, probier nochmal (Versuch 1/3)")
         except:
             pass
         print "error ", ex
@@ -49,14 +53,14 @@ def realy_handle_command(connection, e, command):
         for line in "".join(data).split("\n"):
             connection.privmsg(target, line)
     elif command == "bot help":
-        connection.privmsg(target, u"player name - infos zu einem spieler")
-        connection.privmsg(target, u"alliance tag - infos zu einer allianz")
-        connection.privmsg(target, u"aplayer bzw. aalliance - gibt erweiterte infos")
-        connection.privmsg(target, u"fplayer bzw. falliance - gibt 6 spieler/allianz nach Ähnlichkeit zurück")
-        connection.privmsg(target, u"which met kris deut [plasma] [temp] [kurs] - gibt Vorschlag welche Mine am besten zu bauen ist - help which für mehr")
+        connection.privmsg(target, u"!player name - infos zu einem spieler")
+        connection.privmsg(target, u"!alliance tag - infos zu einer allianz")
+        connection.privmsg(target, u"!aplayer bzw. aalliance - gibt erweiterte infos")
+        connection.privmsg(target, u"!fplayer bzw. falliance - gibt 6 spieler/allianz nach Ähnlichkeit zurück")
+        connection.privmsg(target, u"!which met kris deut [plasma] [temp] [kurs] - gibt Vorschlag welche Mine am besten zu bauen ist - help which für mehr")
     elif command == "help which":
-        connection.privmsg(target, u"Beispielaufruf: which 18 15 12 für met=18,kris=15 und deut=12 - plasmatech=0 und maximale temperatur=50 da nicht angegeben, kurs=2:1:1")
-        connection.privmsg(target, u"Beispielaufruf: which 18 15 12 3 45 3:2:1 nun ist plasma=3, temp=45 und der kurs 3:2:1")
+        connection.privmsg(target, u"Beispielaufruf: !which 18 15 12 für met=18,kris=15 und deut=12 - plasmatech=0 und maximale temperatur=50 da nicht angegeben, kurs=2:1:1")
+        connection.privmsg(target, u"Beispielaufruf: !which 18 15 12 3 45 3:2:1 nun ist plasma=3, temp=45 und der kurs 3:2:1")
 
     elif command.startswith("which "):
         args = command.split(" ")
@@ -83,26 +87,3 @@ def realy_handle_command(connection, e, command):
         connection.privmsg(target, msg)
 
 
-# coding=utf-8
-#import logging
-#from datetime import datetime
-#
-##logging init
-#logger = logging.getLogger()
-#logger.setLevel(logging.DEBUG)
-#
-#formatter = logging.Formatter('%(asctime)-15s %(levelname)s %(name)s %(message)s')
-#formatter_short = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s',
-#        "%M:%S")
-## filehandler
-#
-#name = "log"+datetime.now().strftime("%Y_%m_%d")
-#hdlr = logging.FileHandler(name)
-#
-#hdlr.setFormatter(formatter)
-#hdlr.setLevel(logging.CRITICAL)
-#logger.addHandler(hdlr)
-#
-#def do_logging(connection, e, command):
-#    if e.type == "pubmsg":
-#        logger.critical(command)

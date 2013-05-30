@@ -291,8 +291,21 @@ def which(mlevel, klevel, dlevel, plasma=0, mtemp=50, mse=[2.0,1.0,1.0]):
    return min(t, key=t.get)
 
 
+def buildingTopList(buildings, research=0, temp=50, mse=[2.0,1.0,1.0]):
+    t= []
+    try:
+        plasma = research[122]
+    except:
+        plasma = 0
+    for bId in buildings:
+        lvl = buildings[bId]
+        t.append({'bId': bId, 'atime': atime(lvl+1,1,plasma, mse=mse)})
 
-
+    t = sorted(t, key=lambda x: x["atime"])
+    maxT = t[len(t)-1]["atime"]
+    for i in t:
+        i["improve"] = 1-i["atime"]/maxT
+    return t
 
 
 

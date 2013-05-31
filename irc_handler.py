@@ -1,7 +1,6 @@
 # coding=utf-8
 import re
 import api
-reload(api)
 api = api.Api("uni117.ogame.de", "var", quick=True)
 
 def handle_command(connection, e, command):

@@ -25,6 +25,57 @@ The known commands are:
     dcc -- Let the bot invite you to a DCC CHAT connection.
 """
 
+
+# coding=utf-8
+import logging
+import sys
+import os
+
+#logging init
+logger = logging.getLogger("irclog")
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)-15s %(message)s')
+formatter_short = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s', "%M:%S")
+# filehandler
+
+dirPath = os.path.join("var", 'log')
+if not os.path.exists(dirPath):
+    logger.info("creating log directory")
+    try:
+        os.makedirs(dirPath)
+    except:
+        pass
+
+name = "log"#+datetime.now().strftime("%Y_%m_%d")
+hdlr = logging.FileHandler(os.path.join(dirPath, name))
+
+hdlr.setFormatter(formatter)
+hdlr.setLevel(logging.CRITICAL)
+logger.addHandler(hdlr)
+
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter_short)
+logger.addHandler(ch)
+
+def log_uncaught_exceptions(*exc_info): 
+    logging.critical('Unhandled exception:', exc_info=exc_info) 
+sys.excepthook = log_uncaught_exceptions
+
+
+
+
+
+
+
+
+
+
+
+
+
 import irc.bot
 import irc.strings
 from irc.client import ip_numstr_to_quad
@@ -71,6 +122,13 @@ class TestBot(irc.bot.SingleServerIRCBot):
             self.dcc_connect(address, port)
 
     def do_command(self, e, cmd):
+        nick = e.source.nick
+        if e.type == "privmsg":
+            # normally this sould be logged in another file
+            pass
+        elif e.type == "pubmsg":
+            logger.critical("[ %s ]: %s" % (nick, cmd))
+
         reload(irc_handler)
         irc_handler.handle_command(self.connection, e, cmd)
 

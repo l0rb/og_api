@@ -299,7 +299,7 @@ def buildingTopList(buildings, research=0, temp=50, mse=[2.0,1.0,1.0]):
         plasma = 0
     for bId in buildings:
         lvl = buildings[bId]
-        t.append({'bId': bId, 'atime': atime(lvl+1,1,plasma,temp, mse=mse)})
+        t.append({'bId': bId, 'atime': atime(lvl+1,bId,plasma,temp, mse=mse)})
     t = sorted(t, key=lambda x: x["atime"])
     return t
 

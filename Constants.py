@@ -322,7 +322,7 @@ if __name__ == "__main__":
     assert(prod_kris(18) == 2016)
     assert(prod_met(20) == 4066)
     assert(prod_deut(15, 48) == 781)
-    assert(to_mse(metal = 1000 == 1000))
+    assert(to_mse(metal = 1000) == 1000)
     assert(to_mse(metal = 1000, crystal = 1000) == 3000)
     assert(to_mse(metal = 1000, crystal = 1000, deuterium = 1000) == 5000)
     assert(which(18,15,12,6,27) == 2)

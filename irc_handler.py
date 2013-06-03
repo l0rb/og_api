@@ -67,17 +67,11 @@ def realy_handle_command(connection, e, command):
         plasma = 0
         temp = 50
         mse = [2.0, 1.0, 1.0]
-        if len(args) == 2:
-            met = int(args[1])
-            kris = None
-            deut = None
-        elif len(args) == 3:
+        deut = None
+        if len(args) > 2:
             met = int(args[1])
             kris = int(args[2])
-            deut = None
-        elif len(args) > 3:
-            met = int(args[1])
-            kris = int(args[2])
+        if len(args) > 3:
             deut = int(args[3])
         if len(args) > 4:
             plasma = int(args[4])
@@ -95,7 +89,10 @@ def realy_handle_command(connection, e, command):
             msg = "Am besten baust du: %s" % Constants.buildLabels[bId]
             connection.privmsg(target, msg)
         else:
-            t = Constants.buildingTopList({1:met, 2:kris, 3:deut}, {122:plasma}, temp, mse)
+            buildings = {1:met, 2:kris}
+            if deut != None:
+                buildings[3] = deut
+            t = Constants.buildingTopList(buildings, {122:plasma}, temp, mse)
             i = 0
             for build in t:
                 i+=1

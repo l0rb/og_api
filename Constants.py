@@ -330,13 +330,21 @@ if __name__ == "__main__":
     assert(which(18,16,13,6,27) == 1)
     assert(which(19,16,13,6,27) == 2)
     assert(which(19,17,13,6,27) == 3)
-    assert(which(19,17,13,6,27) == 3)
     assert(which(19,17,14,6,27) == 1)
     assert(which(20,17,14,6,27) == 3)
     assert(which(20,17,15,6,27) == 1)
     assert(which(21,17,15,6,27) == 2)
 
 
+    assert(buildingTopList({1:18,2:15,3:12}, {122:6}, 27)[0]["bId"] == 2)
+    assert(buildingTopList({1:18,2:16,3:12}, {122:6}, 27)[0]["bId"] == 3)
+    assert(buildingTopList({1:18,2:16,3:13}, {122:6}, 27)[0]["bId"] == 1)
+    assert(buildingTopList({1:19,2:16,3:13}, {122:6}, 27)[0]["bId"] == 2)
+    assert(buildingTopList({1:19,2:17,3:13}, {122:6}, 27)[0]["bId"] == 3)
+    assert(buildingTopList({1:19,2:17,3:14}, {122:6}, 27)[0]["bId"] == 1)
+    assert(buildingTopList({1:20,2:17,3:14}, {122:6}, 27)[0]["bId"] == 3)
+    assert(buildingTopList({1:20,2:17,3:15}, {122:6}, 27)[0]["bId"] == 1)
+    assert(buildingTopList({1:21,2:17,3:15}, {122:6}, 27)[0]["bId"] == 2)
 
     assert(getCosts(1, 22) == {"metal":299273, "crystal":74818, "deuterium":0})
     assert(getCosts(2, 19) == {"metal":226673, "crystal":113336, "deuterium":0})

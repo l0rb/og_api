@@ -289,10 +289,15 @@ def atime(level, bId, plasma=0, mtemp=50, mse=None):
 
 def which(mlevel, klevel, dlevel, plasma=0, mtemp=50, mse=None):
    if not mse: mse = [2.0, 1.0, 1.0]
-   t= {1: atime(mlevel + 1, 1, plasma, mse=mse),
-       2: atime(klevel + 1, 2, plasma, mse=mse),
-       3: atime(dlevel + 1, 3, mtemp=mtemp, mse=mse),
-       }
+   if dlevel is None:
+      t= {1: atime(mlevel + 1, 1, plasma, mse=mse),
+          2: atime(klevel + 1, 2, plasma, mse=mse),
+         }
+   else:
+      t= {1: atime(mlevel + 1, 1, plasma, mse=mse),
+          2: atime(klevel + 1, 2, plasma, mse=mse),
+          3: atime(dlevel + 1, 3, mtemp=mtemp, mse=mse),
+         }
    return min(t, key=t.get)
 
 
@@ -303,8 +308,9 @@ def buildingTopList(buildings, research=0, temp=50, mse=[2.0,1.0,1.0]):
     except:
         plasma = 0
     for bId in buildings:
-        lvl = buildings[bId]
-        t.append({'bId': bId, 'atime': atime(lvl+1,bId,plasma,temp, mse=mse)})
+        if bId is not None:
+            lvl = buildings[bId]
+            t.append({'bId': bId, 'atime': atime(lvl+1,bId,plasma,temp, mse=mse)})
     t = sorted(t, key=lambda x: x["atime"])
     return t
 

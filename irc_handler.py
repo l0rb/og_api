@@ -67,7 +67,15 @@ def realy_handle_command(connection, e, command):
         plasma = 0
         temp = 50
         mse = [2.0, 1.0, 1.0]
-        if len(args) > 3:
+        if len(args) == 2:
+            met = int(args[1])
+            kris = None
+            deut = None
+        elif len(args) == 3:
+            met = int(args[1])
+            kris = int(args[2])
+            deut = None
+        elif len(args) > 3:
             met = int(args[1])
             kris = int(args[2])
             deut = int(args[3])

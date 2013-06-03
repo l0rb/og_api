@@ -287,16 +287,6 @@ def atime(level, bId, plasma=0, mtemp=50, mse=None):
         return False
     return round((to_mse(mse=mse, **c) / p )*3600 )
 
-def which(mlevel, klevel, dlevel=None, plasma=0, mtemp=50, mse=None):
-    if not mse: mse = [2.0, 1.0, 1.0]
-    t= {1: atime(mlevel + 1, 1, plasma, mse=mse),
-        2: atime(klevel + 1, 2, plasma, mse=mse),
-     }
-    if dlevel is not None:
-        t[3] = atime(dlevel + 1, 3, mtemp=mtemp, mse=mse)
-    return min(t, key=t.get)
-
-
 def buildingTopList(buildings, research=None, temp=50, mse=None):
     if not mse: mse = [2.0, 1.0, 1.0]
     try:
@@ -331,19 +321,9 @@ if __name__ == "__main__":
     assert(to_mse(metal = 1000) == 1000)
     assert(to_mse(metal = 1000, crystal = 1000) == 3000)
     assert(to_mse(metal = 1000, crystal = 1000, deuterium = 1000) == 5000)
-    assert(which(18,15,12,6,27) == 2)
-    assert(which(18,16,12,6,27) == 3)
-    assert(which(18,16,13,6,27) == 1)
-    assert(which(19,16,13,6,27) == 2)
-    assert(which(19,17,13,6,27) == 3)
-    assert(which(19,17,14,6,27) == 1)
-    assert(which(20,17,14,6,27) == 3)
-    assert(which(20,17,15,6,27) == 1)
-    assert(which(21,17,15,6,27) == 2)
 
     for met in range(0,7):
         for kris in range(0,15):
-            assert(which(met,kris,0,6,27) == which(met,kris,plasma=6,mtemp=27))
             assert(buildingTopList({1:met,2:kris,3:0}, {122:6}, 27)[0]["bId"] ==
                 buildingTopList({1:met,2:kris}, {122:6}, 27)[0]["bId"])
 

@@ -223,8 +223,8 @@ plasma_krisbonus= 0.0066 # 0.66% per level
 
 from math import floor
 def getCosts(bId, lvl):
+    c = costs[bId]
     if isBuilding(bId) or isResearch(bId):
-        c = costs[bId]
         return {
                 'metal': floor(c[0]*pow(c[3], lvl)),
                 'crystal': floor(c[1]*pow(c[3], lvl)),
@@ -238,7 +238,8 @@ def getCosts(bId, lvl):
                 }
 
 
-def to_mse(metal=0, crystal=0, deuterium=0, mse=[2.0,1.0,1.0]):
+def to_mse(metal=0, crystal=0, deuterium=0, mse=None):
+    if not mse: mse = [2.0, 1.0, 1.0]
     m = metal
     k = crystal * (mse[0]/mse[1])
     d = deuterium * (mse[0]/mse[2])
@@ -271,9 +272,10 @@ def prod_deut_gain(level=1,mtemp=0):
    d2= prod_deut(level,mtemp)
    return d2-d1
 
-def atime(level, bId, plasma=0, mtemp=50, mse=[2.0,1.0,1.0]):
+def atime(level, bId, plasma=0, mtemp=50, mse=None):
     """ Return time in seconds after which the mine with the given level
     has paid off itself. """
+    if not mse: mse = [2.0, 1.0, 1.0]
     c = getCosts(bId, level-1)
     if bId == 1:
         p = to_mse(metal=prod_met_gain(level,plasma), mse=mse)
@@ -281,13 +283,16 @@ def atime(level, bId, plasma=0, mtemp=50, mse=[2.0,1.0,1.0]):
         p = to_mse(crystal=prod_kris_gain(level,plasma), mse=mse)
     elif bId == 3:
         p = to_mse(deuterium=prod_deut_gain(level,mtemp), mse=mse)
+    else:
+        return False
     return round((to_mse(mse=mse, **c) / p )*3600 )
 
-def which(mlevel, klevel, dlevel, plasma=0, mtemp=50, mse=[2.0,1.0,1.0]):
-   t= {}
-   t[1] = atime(mlevel+1,1,plasma, mse=mse)
-   t[2] = atime(klevel+1,2,plasma, mse=mse)
-   t[3] = atime(dlevel+1,3,mtemp=mtemp, mse=mse)
+def which(mlevel, klevel, dlevel, plasma=0, mtemp=50, mse=None):
+   if not mse: mse = [2.0, 1.0, 1.0]
+   t= {1: atime(mlevel + 1, 1, plasma, mse=mse),
+       2: atime(klevel + 1, 2, plasma, mse=mse),
+       3: atime(dlevel + 1, 3, mtemp=mtemp, mse=mse),
+       }
    return min(t, key=t.get)
 
 

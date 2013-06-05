@@ -20,6 +20,10 @@ parser.add_argument('--find', '-f', type=int, help='lists $count matches (just t
 args = parser.parse_args()
 
 api = Api(args.server, "var", quick=args.quick)
+if args.player:
+    args.player = args.player.decode("utf-8")
+if args.alliance:
+    args.alliance = args.alliance.decode("utf-8")
 
 if args.find:
     find = args.find

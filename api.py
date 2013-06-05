@@ -29,6 +29,7 @@ class Api(object):
                 'playerData': timedelta(days=7),
                 'alliances': timedelta(days=1),
                 'players': timedelta(days=1),
+                'highscore': timedelta(hours=1),
                 }
         api_data = self.cache.lookup(self.server+"_"+type+append.encode("base64"))
         need_download = False
@@ -81,13 +82,24 @@ class Api(object):
         player_info["serverId"] = dataEl.get("serverId")
         player_info["timestamp"] = dataEl.get("timestamp")
         position = {}
-        for posEl in root.xpath(".//position"):
-            position[int(posEl.get("type"))] = {
-                    "position":int(posEl.text),
+        # position info is outdated - highscore.xml gets updated every hour - so better use this
+        #for posEl in root.xpath(".//position"):
+        #    position[int(posEl.get("type"))] = {
+        #            "position":int(posEl.text),
+        #            "score":int(posEl.get("score")),
+        #            }
+        #    if posEl.get("ships"):
+        #        position[int(posEl.get("type"))]["ships"] = posEl.get("ships")
+        #player_info["position"] = position
+        for posType in (0, 1, 2, 3, 4, 5, 6, 7):
+            highscoreRoot = self._getLxmlRoot(self._doApiRequest("highscore", "?category=1&type="+str(posType)))
+            posEl = highscoreRoot.xpath(".//player[@id=%s]" % id)[0]
+            position[posType] = {
+                    "position":int(posEl.get("position")),
                     "score":int(posEl.get("score")),
                     }
             if posEl.get("ships"):
-                position[int(posEl.get("type"))]["ships"] = posEl.get("ships")
+                position[posType]["ships"] = posEl.get("ships")
         player_info["position"] = position
 
         planets = []
@@ -106,6 +118,12 @@ class Api(object):
                     "tag": tag,
                     "name": name,
                     }
+        # to get the playerstatus we have to retrieve the players.xml :/
+        playersRoot = self._getLxmlRoot(self._doApiRequest("players"))
+        playerEl = playersRoot.xpath(".//player[@id=%s]" % id)[0]
+        player_info["status"] = playerEl.get("status")
+        if not player_info["status"]:
+            player_info["status"] = ""
         return (True, player_info)
 
 
@@ -144,12 +162,16 @@ class Api(object):
         if self.quick:
             type = 0
             position = player_info["position"][type]
+            if player_info["status"]:
+                retStr.append("%s, " % player_info["status"])
             retStr.append("%s: %04d - %d  " % (type_to_name[type], position["position"], position["score"]))
             if self.server in self.ogniter_mapping:
                 retStr.append("http://www.ogniter.org/de/%d/player/%d\n" % (self.ogniter_mapping[self.server], int(player_info["id"])))
             else:
                 retStr.append("\n")
         else:
+            if player_info["status"]:
+                retStr.append("Status: %s\n" % player_info["status"])
             for type in player_info["position"]:
                 position = player_info["position"][type]
                 retStr.append("%s: %04d - %d\n" % (type_to_name[type].ljust(18), position["position"], position["score"]))

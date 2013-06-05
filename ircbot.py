@@ -88,6 +88,8 @@ class TestBot(irc.bot.SingleServerIRCBot):
         irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
         self.channel = channel
         self.connection.buffer_class = LineBuffer
+        # I couldn't find any place where the flood limit is specified - I've read 3/5 (3 messages in 5 seconds)
+        self.connection.set_rate_limit(1)
 
     def on_nicknameinuse(self, c, e):
         print "nickname in use"

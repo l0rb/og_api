@@ -253,7 +253,7 @@ class Api(object):
                 if not self.quick:
                     retStr.append("\n")
         if self.server in self.ogniter_mapping:
-            retStr.append("http://www.ogniter.org/de/%d/alliance/%d" % (self.ogniter_mapping[self.server], alliance_info["id"]))
+            retStr.append("http://www.ogniter.org/de/%d/alliance/%d " % (self.ogniter_mapping[self.server], alliance_info["id"]))
             if not self.quick:
                 retStr.append("\n")
         if self.quick:

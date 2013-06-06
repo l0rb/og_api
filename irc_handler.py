@@ -51,7 +51,7 @@ def realy_handle_command(connection, e, command):
                 data = api.getAllianceString(name)
         for line in "".join(data).split("\n"):
             connection.privmsg(target, line)
-    elif command == "bot help":
+    elif command == "help":
         connection.privmsg(target, u"!player name - infos zu einem spieler")
         connection.privmsg(target, u"!alliance tag - infos zu einer allianz")
         connection.privmsg(target, u"!aplayer bzw. aalliance - gibt erweiterte infos")

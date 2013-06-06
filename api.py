@@ -60,14 +60,14 @@ class Api(object):
             all_names.append((el, Levenshtein.ratio(el.get(attr).decode("utf-8").lower(), name)))
         return sorted(all_names, key=lambda x: x[1], reverse = True)
 
-    def getPlayerInfo(self, id=False, name=False, find=False):
+    def getPlayerInfo(self, id=False, name=False):
         sim = 1.0
         if not id:
             root = self._getLxmlRoot(self._doApiRequest("players"))
             el, sim = self._findMatch(root.xpath(".//player"), "name", name)[0]
             if sim == 0.0:
                 return (False, "No match")
-            id = el.get("id")
+            id = int(el.get("id"))
         playerData = self._doApiRequest("playerData", "?id="+str(id))
         if playerData == "Player not found.":
             return (False, "Player not found.")
@@ -78,7 +78,7 @@ class Api(object):
         dataEl = root.xpath("/playerData")[0]
         player_info["name"] = dataEl.get("name")
         player_info["sim"] = sim
-        player_info["id"] = dataEl.get("id")
+        player_info["id"] = int(dataEl.get("id"))
         player_info["serverId"] = dataEl.get("serverId")
         player_info["timestamp"] = dataEl.get("timestamp")
         position = {}
@@ -93,7 +93,7 @@ class Api(object):
         #player_info["position"] = position
         for posType in (0, 1, 2, 3, 4, 5, 6, 7):
             highscoreRoot = self._getLxmlRoot(self._doApiRequest("highscore", "?category=1&type="+str(posType)))
-            posEl = highscoreRoot.xpath(".//player[@id=%s]" % id)[0]
+            posEl = highscoreRoot.xpath(".//player[@id=%d]" % id)[0]
             position[posType] = {
                     "position":int(posEl.get("position")),
                     "score":int(posEl.get("score")),
@@ -115,6 +115,7 @@ class Api(object):
             tag = ally.xpath(".//tag")[0].text
             name = ally.xpath(".//name")[0].text
             player_info["ally"] = {
+                    "id": int(ally.get("id")),
                     "tag": tag,
                     "name": name,
                     }
@@ -126,6 +127,51 @@ class Api(object):
             player_info["status"] = ""
         return (True, player_info)
 
+    def getAllianceInfo(self, id=False, tag=False):
+        sim = 1.0
+        if not id:
+            root = self._getLxmlRoot(self._doApiRequest("alliances"))
+            el, sim = self._findMatch(root.xpath(".//alliance"), "tag", tag)[0]
+            if sim == 0.0:
+                return (False, "No match")
+            id = int(el.get("id"))
+        else:
+            root = self._getLxmlRoot(self._doApiRequest("alliances"))
+            el = root.xpath(".//alliance[@id=%d]" % id)[0]
+
+
+        alliance_info = {}
+        alliance_info["name"] = el.get("name")
+        alliance_info["tag"] = el.get("tag")
+        alliance_info["sim"] = sim
+        alliance_info["id"] = int(el.get("id"))
+        alliance_info["homepage"] = el.get("homepage")
+        alliance_info["logo"] = el.get("logo")
+        alliance_info["open"] = el.get("open")
+        alliance_info["serverId"] = root.get("serverId")
+        alliance_info["timestamp"] = root.get("timestamp")
+
+        players = []
+        for playerEl in el.xpath(".//player"):
+            players.append(int(playerEl.get("id")))
+        alliance_info["players"] = players
+        return (True, alliance_info)
+
+    def listPlayers(self):
+        root = self._getLxmlRoot(self._doApiRequest("players"))
+        allEls = root.xpath(".//player")
+        ret = []
+        for el in allEls:
+            ret.append(int(el.get("id")))
+        return ret
+
+    def listAlliances(self):
+        root = self._getLxmlRoot(self._doApiRequest("alliances"))
+        allEls = root.xpath(".//alliance")
+        ret = []
+        for el in allEls:
+            ret.append(int(el.get("id")))
+        return ret
 
     def findPlayer(self, name, find):
         retStr = []
@@ -195,27 +241,26 @@ class Api(object):
 
     def getAllianceString(self, tag):
         retStr = []
-        root = self._getLxmlRoot(self._doApiRequest("alliances"))
-        el, sim = self._findMatch(root.xpath(".//alliance"), "tag", tag.strip())[0]
-        if sim == 0.0:
-            retStr.append("No match\n")
+        (ret, alliance_info) = self.getAllianceInfo(tag=tag.strip())
+        if not ret:
+            retStr.append(alliance_info)
             return retStr
-        if sim != 1.0:
-            retStr.append("%s - similarity:%.2f\n" % (el.get("tag"), sim))
+        if alliance_info["sim"] != 1.0:
+            retStr.append("%s - similarity:%.2f\n" % (alliance_info["tag"], alliance_info["sim"]))
         for i in ["name", "homepage", "logo", "open"]:
-            if el.get(i):
-                retStr.append("%s: %s   " % (i, el.get(i)))
+            if alliance_info[i]:
+                retStr.append("%s: %s   " % (i, alliance_info[i]))
                 if not self.quick:
                     retStr.append("\n")
         if self.server in self.ogniter_mapping:
-            retStr.append("http://www.ogniter.org/de/%d/alliance/%d" % (self.ogniter_mapping[self.server], int(el.get("id"))))
+            retStr.append("http://www.ogniter.org/de/%d/alliance/%d" % (self.ogniter_mapping[self.server], alliance_info["id"]))
             if not self.quick:
                 retStr.append("\n")
         if self.quick:
-            retStr.append("players: %d\n" % (len(el.xpath(".//player"))))
+            retStr.append("players: %d\n" % (len(alliance_info["players"])))
         players = []
-        for playerEl in el.xpath(".//player"):
-            (ret, player_info) = self.getPlayerInfo(id=playerEl.get("id"))
+        for playerId in alliance_info["players"]:
+            (ret, player_info) = self.getPlayerInfo(id=playerId)
             if ret:
                 players.append((player_info["name"], player_info["position"][0]["position"], player_info))
         players = sorted(players, key=lambda x: x[1])

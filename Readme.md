@@ -104,3 +104,9 @@ The layout of the table is this:
 * score6 integer NULL
 * position7 integer NULL
 * score7 integer NULL
+
+Useful queries:
+*top 5 alliances with less than 2 players*
+* SELECT alliance.name, COUNT(alliance.id), SUM(player.score0) as s0sum FROM player,alliance WHERE player.allianceId=alliance.id GROUP BY alliance.id HAVING COUNT(alliance.id)<3 ORDER BY s0sum DESC LIMIT 5
+* players in top 100 which are not military top 1200 (so they are miners)
+* SELECT player.name,player.position0, alliance.name FROM player LEFT JOIN alliance ON alliance.id=player.allianceId WHERE position0<=100 AND position3>1200 ORDER BY position0

@@ -1,7 +1,9 @@
 # coding=utf-8
 import re
 import api
-api = api.Api("uni117.ogame.de", "var", quick=True)
+# TODO get server from commandline
+server = "uni117.ogame.de"
+api = api.Api(server, "var", quick=True)
 
 def handle_command(connection, e, command):
     #    try:
@@ -100,3 +102,17 @@ def realy_handle_command(connection, e, command):
                 atime = str(datetime.timedelta(seconds=atime))
                 msg = "%d: %s %s" % (i, Constants.buildLabels[bId], atime)
                 connection.privmsg(target, msg)
+    elif command == "dbupdate":
+        import db
+        connection.privmsg(target, "updating db - this takes some time..")
+        db.update(server)
+        connection.privmsg(target, "updated")
+    elif command.startswith("dbquery"):
+        import db
+        res = db.query(command[8:])
+        max = 10
+        for line in res:
+            connection.privmsg(target, line)
+            max -= 1
+            if max == 0:
+                break

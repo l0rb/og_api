@@ -86,26 +86,32 @@ def update(server, consoleOut=True):
     for playerId in allHighscore[0]:
         count += 1
         print "%d/%d\r" % (count, all),
-        updateData.append((
-                allHighscore[3][playerId]["ships"],
-                allHighscore[0][playerId]["position"],
-                allHighscore[1][playerId]["position"],
-                allHighscore[2][playerId]["position"],
-                allHighscore[3][playerId]["position"],
-                allHighscore[4][playerId]["position"],
-                allHighscore[5][playerId]["position"],
-                allHighscore[6][playerId]["position"],
-                allHighscore[7][playerId]["position"],
-                allHighscore[0][playerId]["score"],
-                allHighscore[1][playerId]["score"],
-                allHighscore[2][playerId]["score"],
-                allHighscore[3][playerId]["score"],
-                allHighscore[4][playerId]["score"],
-                allHighscore[5][playerId]["score"],
-                allHighscore[6][playerId]["score"],
-                allHighscore[7][playerId]["score"],
-                playerId,
-                timestamp))
+        try:
+            updateData.append((
+                    allHighscore[3][playerId]["ships"],
+                    allHighscore[0][playerId]["position"],
+                    allHighscore[1][playerId]["position"],
+                    allHighscore[2][playerId]["position"],
+                    allHighscore[3][playerId]["position"],
+                    allHighscore[4][playerId]["position"],
+                    allHighscore[5][playerId]["position"],
+                    allHighscore[6][playerId]["position"],
+                    allHighscore[7][playerId]["position"],
+                    allHighscore[0][playerId]["score"],
+                    allHighscore[1][playerId]["score"],
+                    allHighscore[2][playerId]["score"],
+                    allHighscore[3][playerId]["score"],
+                    allHighscore[4][playerId]["score"],
+                    allHighscore[5][playerId]["score"],
+                    allHighscore[6][playerId]["score"],
+                    allHighscore[7][playerId]["score"],
+                    playerId,
+                    timestamp))
+        except:
+            # when a new player registers it can happen that he is in
+            # posType=0 but not in posType=3
+            # since it is just a new player, don't do much about it
+            print playerId
 
     cur.executemany("""UPDATE `player` SET ships = ?, position0 = ?, position1 = ?, position2 = ?, position3 = ?, position4 = ?, position5 = ?,
             position6 = ?, position7 = ?, score0 = ?, score1 = ?, score2 = ?, score3 = ?, score4 = ?, score5 = ?, score6 = ?, score7 = ?  WHERE

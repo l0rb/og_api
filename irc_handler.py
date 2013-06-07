@@ -52,6 +52,7 @@ def realy_handle_command(connection, e, command):
         for line in "".join(data).split("\n"):
             connection.privmsg(target, line)
     elif command == "help":
+        target = e.source.nick # help commands should only be private
         connection.privmsg(target, u"!player name - infos zu einem spieler")
         connection.privmsg(target, u"!alliance tag - infos zu einer allianz")
         connection.privmsg(target, u"!aplayer bzw. aalliance - gibt erweiterte infos")
@@ -59,6 +60,7 @@ def realy_handle_command(connection, e, command):
         connection.privmsg(target, u"!which met kris deut [plasma] [temp] [kurs] - gibt Vorschlag welche Mine am besten zu bauen ist - help which für mehr")
         connection.privmsg(target, u"!awhich same as which, but a bit more detailed")
     elif command == "help which":
+        target = e.source.nick # help commands should only be private
         connection.privmsg(target, u"Beispielaufruf: !which 18 15 12 für met=18,kris=15 und deut=12 - plasmatech=0 und maximale temperatur=50 da nicht angegeben, kurs=2:1:1")
         connection.privmsg(target, u"Beispielaufruf: !which 18 15 12 3 45 3:2:1 nun ist plasma=3, temp=45 und der kurs 3:2:1")
 

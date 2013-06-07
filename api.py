@@ -5,8 +5,12 @@ from cache import FileCache
 from helper import textextract
 from datetime import datetime, timedelta
 import logging
+#import cElementTree as etree
 from lxml import etree
 import Levenshtein
+import time
+
+
 
 logger = logging.getLogger('urlCache')
 
@@ -23,6 +27,7 @@ class Api(object):
         self.server = server
         self.cache = FileCache(cache_dir)
         self.quick = quick
+        self.lxmlCache = {}
 
     def _doApiRequest(self, type, append=""):
         type_to_update_intervall = {
@@ -37,7 +42,11 @@ class Api(object):
             logger.info("Need download because %s is not cached")
             need_download = True
         else:
-            timestamp = int(textextract(api_data, 'timestamp="', '"'))
+            try:
+                # exception when response is "player not found"
+                timestamp = int(textextract(api_data, 'timestamp="', '"'))
+            except:
+                timestamp = int(time.time())
             timestamp = datetime.fromtimestamp(timestamp)
             if timestamp + type_to_update_intervall[type] < datetime.now():
                 logger.info("Need download because %s is more than 12h old" % (self.server+"_"+type))
@@ -46,9 +55,24 @@ class Api(object):
             r = requests.get('http://'+self.server+'/api/'+type+'.xml'+append)
             self.cache.write(self.server+"_"+type+append.encode("base64"), r.text)
             api_data = r.text
-        return api_data
+        return (need_download, type, append), api_data
 
-    def _getLxmlRoot(self, data):
+    def _getLxmlRoot(self, apiRequestData):
+        need_download = apiRequestData[0][0]
+        type = apiRequestData[0][1]
+        append = apiRequestData[0][2]
+        data = apiRequestData[1]
+        if type == "highscore" or type == "players" or type == "alliances":
+            if not need_download:
+                try:
+                    return self.lxmlCache[type+append]
+                except:
+                    pass
+            else:
+                data = bytes(bytearray(data, encoding="utf-8"))
+                self.lxmlCache[type+append] = etree.fromstring(data)
+                return self.lxmlCache[type+append]
+
         # lxml seems to have a problem with unicode-strings so do this strange conversion
         data = bytes(bytearray(data, encoding="utf-8"))
         return etree.fromstring(data)
@@ -68,10 +92,10 @@ class Api(object):
             if sim == 0.0:
                 return (False, "No match")
             id = int(el.get("id"))
-        playerData = self._doApiRequest("playerData", "?id="+str(id))
+        data, playerData = self._doApiRequest("playerData", "?id="+str(id))
         if playerData == "Player not found.":
             return (False, "Player not found.")
-        root = self._getLxmlRoot(playerData)
+        root = self._getLxmlRoot((data, playerData))
 
         player_info = {}
 
@@ -93,13 +117,21 @@ class Api(object):
         #player_info["position"] = position
         for posType in (0, 1, 2, 3, 4, 5, 6, 7):
             highscoreRoot = self._getLxmlRoot(self._doApiRequest("highscore", "?category=1&type="+str(posType)))
-            posEl = highscoreRoot.xpath(".//player[@id=%d]" % id)[0]
+            posEl = highscoreRoot.xpath(".//player[@id=%d]" % id)
+            if not posEl:
+                print posType
+                return (False, "This player has no highscore - either he is gamemaster, or banned")
+            else:
+                posEl = posEl[0]
             position[posType] = {
                     "position":int(posEl.get("position")),
                     "score":int(posEl.get("score")),
                     }
-            if posEl.get("ships"):
-                position[posType]["ships"] = posEl.get("ships")
+            if posType == 3:
+                if posEl.get("ships"):
+                    position[posType]["ships"] = int(posEl.get("ships"))
+                else:
+                    position[posType]["ships"] = 0
         player_info["position"] = position
 
         planets = []
@@ -110,6 +142,7 @@ class Api(object):
         ally = root.xpath(".//alliance")
         if len(ally) == 0:
             player_info["ally"] = False
+            player_info["allianceId"] = 0
         else:
             ally = ally[0]
             tag = ally.xpath(".//tag")[0].text
@@ -119,6 +152,7 @@ class Api(object):
                     "tag": tag,
                     "name": name,
                     }
+            player_info["allianceId"] = int(ally.get("id"))
         # to get the playerstatus we have to retrieve the players.xml :/
         playersRoot = self._getLxmlRoot(self._doApiRequest("players"))
         playerEl = playersRoot.xpath(".//player[@id=%s]" % id)[0]
@@ -147,7 +181,7 @@ class Api(object):
         alliance_info["id"] = int(el.get("id"))
         alliance_info["homepage"] = el.get("homepage")
         alliance_info["logo"] = el.get("logo")
-        alliance_info["open"] = el.get("open")
+        alliance_info["open"] = bool(el.get("open"))
         alliance_info["serverId"] = root.get("serverId")
         alliance_info["timestamp"] = root.get("timestamp")
 

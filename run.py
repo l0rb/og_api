@@ -1,9 +1,6 @@
 #!/usr/bin/python
 
-import logging
 from api import Api
-
-logger = logging.getLogger('urlCache')
 
 def Args():
     pass

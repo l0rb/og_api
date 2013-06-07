@@ -5,8 +5,12 @@ from cache import FileCache
 from helper import textextract
 from datetime import datetime, timedelta
 import logging
-#import cElementTree as etree
-from lxml import etree
+try:
+    from lxml import etree
+except:
+    import xml.etree.ElementTree as etree
+    # cElementTree doesn't support xpath player[@id='123']
+    #import cElementTree as etree
 import Levenshtein
 import time
 
@@ -28,6 +32,8 @@ class Api(object):
         self.cache = FileCache(cache_dir)
         self.quick = quick
         self.lxmlCache = {}
+        # use session to reuse the connection
+        self.requests = requests.Session()
 
     def _doApiRequest(self, type, append=""):
         type_to_update_intervall = {
@@ -36,7 +42,7 @@ class Api(object):
                 'players': timedelta(days=1),
                 'highscore': timedelta(hours=1),
                 }
-        api_data = self.cache.lookup(self.server+"_"+type+append.encode("base64"))
+        api_data = self.cache.lookup(self.server+"_"+type+append)
         need_download = False
         if not api_data:
             logger.info("Need download because %s is not cached")
@@ -52,8 +58,8 @@ class Api(object):
                 logger.info("Need download because %s is more than 12h old" % (self.server+"_"+type))
                 need_download = True
         if need_download:
-            r = requests.get('http://'+self.server+'/api/'+type+'.xml'+append)
-            self.cache.write(self.server+"_"+type+append.encode("base64"), r.text)
+            r = self.requests.get('http://'+self.server+'/api/'+type+'.xml'+append)
+            self.cache.write(self.server+"_"+type+append, r.text)
             api_data = r.text
         return (need_download, type, append), api_data
 
@@ -88,7 +94,7 @@ class Api(object):
         sim = 1.0
         if not id:
             root = self._getLxmlRoot(self._doApiRequest("players"))
-            el, sim = self._findMatch(root.xpath(".//player"), "name", name)[0]
+            el, sim = self._findMatch(root.findall(".//player"), "name", name)[0]
             if sim == 0.0:
                 return (False, "No match")
             id = int(el.get("id"))
@@ -99,7 +105,7 @@ class Api(object):
 
         player_info = {}
 
-        dataEl = root.xpath("/playerData")[0]
+        dataEl = root
         player_info["name"] = dataEl.get("name")
         player_info["sim"] = sim
         player_info["id"] = int(dataEl.get("id"))
@@ -107,7 +113,7 @@ class Api(object):
         player_info["timestamp"] = dataEl.get("timestamp")
         position = {}
         # position info is outdated - highscore.xml gets updated every hour - so better use this
-        #for posEl in root.xpath(".//position"):
+        #for posEl in root.findall(".//position"):
         #    position[int(posEl.get("type"))] = {
         #            "position":int(posEl.text),
         #            "score":int(posEl.get("score")),
@@ -117,12 +123,9 @@ class Api(object):
         #player_info["position"] = position
         for posType in (0, 1, 2, 3, 4, 5, 6, 7):
             highscoreRoot = self._getLxmlRoot(self._doApiRequest("highscore", "?category=1&type="+str(posType)))
-            posEl = highscoreRoot.xpath(".//player[@id=%d]" % id)
-            if not posEl:
-                print posType
+            posEl = highscoreRoot.find(".//player[@id='%d']" % id)
+            if posEl is None:
                 return (False, "This player has no highscore - either he is gamemaster, or banned")
-            else:
-                posEl = posEl[0]
             position[posType] = {
                     "position":int(posEl.get("position")),
                     "score":int(posEl.get("score")),
@@ -135,18 +138,18 @@ class Api(object):
         player_info["position"] = position
 
         planets = []
-        for planEl in root.xpath(".//planet"):
+        for planEl in root.findall(".//planet"):
             planets.append((planEl.get("coords"), planEl.get("name")))
         player_info["planets"] = planets
 
-        ally = root.xpath(".//alliance")
+        ally = root.findall(".//alliance")
         if len(ally) == 0:
             player_info["ally"] = False
             player_info["allianceId"] = 0
         else:
             ally = ally[0]
-            tag = ally.xpath(".//tag")[0].text
-            name = ally.xpath(".//name")[0].text
+            tag = ally.find(".//tag").text
+            name = ally.find(".//name").text
             player_info["ally"] = {
                     "id": int(ally.get("id")),
                     "tag": tag,
@@ -155,7 +158,7 @@ class Api(object):
             player_info["allianceId"] = int(ally.get("id"))
         # to get the playerstatus we have to retrieve the players.xml :/
         playersRoot = self._getLxmlRoot(self._doApiRequest("players"))
-        playerEl = playersRoot.xpath(".//player[@id=%s]" % id)[0]
+        playerEl = playersRoot.find("player[@id='%d']" % id)
         player_info["status"] = playerEl.get("status")
         if not player_info["status"]:
             player_info["status"] = ""
@@ -165,13 +168,13 @@ class Api(object):
         sim = 1.0
         if not id:
             root = self._getLxmlRoot(self._doApiRequest("alliances"))
-            el, sim = self._findMatch(root.xpath(".//alliance"), "tag", tag)[0]
+            el, sim = self._findMatch(root.findall(".//alliance"), "tag", tag)[0]
             if sim == 0.0:
                 return (False, "No match")
             id = int(el.get("id"))
         else:
             root = self._getLxmlRoot(self._doApiRequest("alliances"))
-            el = root.xpath(".//alliance[@id=%d]" % id)[0]
+            el = root.find(".//alliance[@id=%d]" % id)
 
 
         alliance_info = {}
@@ -186,14 +189,14 @@ class Api(object):
         alliance_info["timestamp"] = root.get("timestamp")
 
         players = []
-        for playerEl in el.xpath(".//player"):
+        for playerEl in el.findall(".//player"):
             players.append(int(playerEl.get("id")))
         alliance_info["players"] = players
         return (True, alliance_info)
 
     def listPlayers(self):
         root = self._getLxmlRoot(self._doApiRequest("players"))
-        allEls = root.xpath(".//player")
+        allEls = root.findall(".//player")
         ret = []
         for el in allEls:
             ret.append(int(el.get("id")))
@@ -201,7 +204,7 @@ class Api(object):
 
     def listAlliances(self):
         root = self._getLxmlRoot(self._doApiRequest("alliances"))
-        allEls = root.xpath(".//alliance")
+        allEls = root.findall(".//alliance")
         ret = []
         for el in allEls:
             ret.append(int(el.get("id")))
@@ -210,7 +213,7 @@ class Api(object):
     def findPlayer(self, name, find):
         retStr = []
         root = self._getLxmlRoot(self._doApiRequest("players"))
-        matches = self._findMatch(root.xpath(".//player"), "name", name.strip())
+        matches = self._findMatch(root.findall(".//player"), "name", name.strip())
         for i in range(0, find):
             el, sim = matches[i]
             retStr.append("%s - %.2f" % (el.get("name"), sim))
@@ -221,7 +224,7 @@ class Api(object):
     def findAlliance(self, tag, find):
         retStr = []
         root = self._getLxmlRoot(self._doApiRequest("alliances"))
-        matches = self._findMatch(root.xpath(".//alliance"), "tag", tag.strip())
+        matches = self._findMatch(root.findall(".//alliance"), "tag", tag.strip())
         for i in range(0, find):
             el, sim = matches[i]
             retStr.append("%s - %.2f" % (el.get("tag"), sim))

@@ -63,6 +63,45 @@ class Api(object):
             api_data = r.text
         return (need_download, type, append), api_data
 
+    # call this if you want to cache many requests - works only for playerData
+    # append must be an array
+    def _doApiRequestAsync(self, type, appendList=[]):
+        # also the newest grequests doesn't work with gevent >= 1.x - but don't know how to check this here
+        try:
+            import grequests
+        except:
+            return
+        type_to_update_intervall = {
+                'playerData': timedelta(days=7),
+                }
+        urlList = []
+        for append in appendList:
+            api_data = self.cache.lookup(self.server+"_"+type+append)
+            need_download = False
+            if not api_data:
+                logger.info("Need download because %s is not cached")
+                need_download = True
+            else:
+                try:
+                    # exception when response is "player not found"
+                    timestamp = int(textextract(api_data, 'timestamp="', '"'))
+                except:
+                    timestamp = int(time.time())
+                timestamp = datetime.fromtimestamp(timestamp)
+                if timestamp + type_to_update_intervall[type] < datetime.now():
+                    logger.info("Need download because %s is more than 12h old" % (self.server+"_"+type))
+                    need_download = True
+            if need_download:
+                urlList.append('http://'+self.server+'/api/'+type+'.xml'+append)
+
+        if len(urlList):
+            rs = (grequests.get(u, session=self.requests, timeout=3) for u in urlList)
+            responses = grequests.map(rs)
+            for r in responses:
+                if r:
+                    append = textextract(r.url, type+".xml", "")
+                    self.cache.write(self.server+"_"+type+append, r.text)
+
     def _getLxmlRoot(self, apiRequestData):
         need_download = apiRequestData[0][0]
         type = apiRequestData[0][1]
@@ -90,7 +129,7 @@ class Api(object):
             all_names.append((el, Levenshtein.ratio(el.get(attr).decode("utf-8").lower(), name)))
         return sorted(all_names, key=lambda x: x[1], reverse = True)
 
-    def getPlayerInfo(self, id=False, name=False):
+    def getPlayerInfo(self, id=False, name=False, addPositionInfo=True, addStatusInfo=True):
         sim = 1.0
         if not id:
             root = self._getLxmlRoot(self._doApiRequest("players"))
@@ -98,7 +137,7 @@ class Api(object):
             if sim == 0.0:
                 return (False, "No match")
             id = int(el.get("id"))
-        data, playerData = self._doApiRequest("playerData", "?id="+str(id))
+        data, playerData = self._doApiRequest("playerData", "?id=%d"%id)
         if playerData == "Player not found.":
             return (False, "Player not found.")
         root = self._getLxmlRoot((data, playerData))
@@ -111,35 +150,41 @@ class Api(object):
         player_info["id"] = int(dataEl.get("id"))
         player_info["serverId"] = dataEl.get("serverId")
         player_info["timestamp"] = dataEl.get("timestamp")
-        position = {}
-        # position info is outdated - highscore.xml gets updated every hour - so better use this
-        #for posEl in root.findall(".//position"):
-        #    position[int(posEl.get("type"))] = {
-        #            "position":int(posEl.text),
-        #            "score":int(posEl.get("score")),
-        #            }
-        #    if posEl.get("ships"):
-        #        position[int(posEl.get("type"))]["ships"] = posEl.get("ships")
-        #player_info["position"] = position
-        for posType in (0, 1, 2, 3, 4, 5, 6, 7):
-            highscoreRoot = self._getLxmlRoot(self._doApiRequest("highscore", "?category=1&type="+str(posType)))
-            posEl = highscoreRoot.find(".//player[@id='%d']" % id)
-            if posEl is None:
-                return (False, "This player has no highscore - either he is gamemaster, or banned")
-            position[posType] = {
-                    "position":int(posEl.get("position")),
-                    "score":int(posEl.get("score")),
-                    }
-            if posType == 3:
-                if posEl.get("ships"):
-                    position[posType]["ships"] = int(posEl.get("ships"))
-                else:
-                    position[posType]["ships"] = 0
-        player_info["position"] = position
+        if addPositionInfo:
+            position = {}
+            # position info is outdated - highscore.xml gets updated every hour - so better use this
+            #for posEl in root.findall(".//position"):
+            #    if posEl.text is None:
+            #        return (False, "This player has no highscore - either he is gamemaster, or banned")
+            #    posType = int(posEl.get("type"))
+            #    position[posType] = {
+            #            "position":int(posEl.text),
+            #            "score":int(posEl.get("score")),
+            #            }
+            #    if posType == 3:
+            #        if posEl.get("ships"):
+            #            position[posType]["ships"] = int(posEl.get("ships"))
+            #        else:
+            #            position[posType]["ships"] = 0
+            for posType in (0, 1, 2, 3, 4, 5, 6, 7):
+                highscoreRoot = self._getLxmlRoot(self._doApiRequest("highscore", "?category=1&type="+str(posType)))
+                posEl = highscoreRoot.find(".//player[@id='%d']" % id)
+                if posEl is None:
+                    return (False, "This player has no highscore - either he is gamemaster, or banned")
+                position[posType] = {
+                        "position":int(posEl.get("position")),
+                        "score":int(posEl.get("score")),
+                        }
+                if posType == 3:
+                    if posEl.get("ships"):
+                        position[posType]["ships"] = int(posEl.get("ships"))
+                    else:
+                        position[posType]["ships"] = 0
+            player_info["position"] = position
 
         planets = []
         for planEl in root.findall(".//planet"):
-            planets.append((planEl.get("coords"), planEl.get("name")))
+            planets.append((planEl.get("coords"), planEl.get("name"), planEl.get("id")))
         player_info["planets"] = planets
 
         ally = root.findall(".//alliance")
@@ -157,11 +202,12 @@ class Api(object):
                     }
             player_info["allianceId"] = int(ally.get("id"))
         # to get the playerstatus we have to retrieve the players.xml :/
-        playersRoot = self._getLxmlRoot(self._doApiRequest("players"))
-        playerEl = playersRoot.find("player[@id='%d']" % id)
-        player_info["status"] = playerEl.get("status")
-        if not player_info["status"]:
-            player_info["status"] = ""
+        if addStatusInfo:
+            playersRoot = self._getLxmlRoot(self._doApiRequest("players"))
+            playerEl = playersRoot.find("player[@id='%d']" % id)
+            player_info["status"] = playerEl.get("status")
+            if not player_info["status"]:
+                player_info["status"] = ""
         return (True, player_info)
 
     def getAllianceInfo(self, id=False, tag=False):
@@ -174,19 +220,18 @@ class Api(object):
             id = int(el.get("id"))
         else:
             root = self._getLxmlRoot(self._doApiRequest("alliances"))
-            el = root.find(".//alliance[@id=%d]" % id)
-
-
-        alliance_info = {}
-        alliance_info["name"] = el.get("name")
-        alliance_info["tag"] = el.get("tag")
-        alliance_info["sim"] = sim
-        alliance_info["id"] = int(el.get("id"))
-        alliance_info["homepage"] = el.get("homepage")
-        alliance_info["logo"] = el.get("logo")
-        alliance_info["open"] = bool(el.get("open"))
-        alliance_info["serverId"] = root.get("serverId")
-        alliance_info["timestamp"] = root.get("timestamp")
+            el = root.find(".//alliance[@id='%d']" % id)
+        alliance_info = {
+            "name": el.get("name"),
+            "tag": el.get("tag"),
+            "sim": sim,
+            "id": int(el.get("id")),
+            "homepage": el.get("homepage"),
+            "logo": el.get("logo"),
+            "open": bool(el.get("open")),
+            "serverId": root.get("serverId"),
+            "timestamp": root.get("timestamp"),
+            }
 
         players = []
         for playerEl in el.findall(".//player"):
@@ -199,16 +244,46 @@ class Api(object):
         allEls = root.findall(".//player")
         ret = []
         for el in allEls:
-            ret.append(int(el.get("id")))
-        return ret
+            status = el.get("status")
+            if status is None:
+                status = ""
+            ret.append({
+                "id":int(el.get("id")),
+                "status":status,
+                })
+        return (int(root.get("timestamp")), ret)
+
+    def listHighscore(self, posType):
+        root = self._getLxmlRoot(self._doApiRequest("highscore", "?category=1&type="+str(posType)))
+        allPlayer = root.findall(".//player")
+        ret = {}
+        for posEl in allPlayer:
+            position = {
+                    "position":int(posEl.get("position")),
+                    "score":int(posEl.get("score")),
+                    }
+            if posType == 3:
+                if posEl.get("ships"):
+                    position["ships"] = int(posEl.get("ships"))
+                else:
+                    position["ships"] = 0
+            ret[int(posEl.get("id"))] = position
+        return (int(root.get("timestamp")), ret)
 
     def listAlliances(self):
         root = self._getLxmlRoot(self._doApiRequest("alliances"))
         allEls = root.findall(".//alliance")
         ret = []
         for el in allEls:
-            ret.append(int(el.get("id")))
-        return ret
+            ret.append({
+                "name": el.get("name"),
+                "tag": el.get("tag"),
+                "id": int(el.get("id")),
+                "homepage": el.get("homepage"),
+                "logo": el.get("logo"),
+                "open": bool(el.get("open")),
+                })
+        return (int(root.get("timestamp")), ret)
 
     def findPlayer(self, name, find):
         retStr = []

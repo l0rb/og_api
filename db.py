@@ -2,6 +2,7 @@
 import sqlite3
 from api import Api
 import atexit
+import datetime
 
 
 
@@ -113,7 +114,6 @@ def update(server, consoleOut=True):
     position7, score0, score1, score2, score3, score4, score5, score6, score7 , playerId , `timestamp`) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?, ?, ?)""", updateData)
 
-
     conn.commit()
     conn.close()
 
@@ -123,6 +123,41 @@ def query(query):
     cur.execute(query)
     ret = []
     return cur.fetchall()
+
+
+def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, maxScore=9999999):
+    galaxy = int(position.split(":")[0])
+    system = int(position.split(":")[1])
+    minSys = system-radius
+    maxSys = system+radius
+    q = """SELECT player.id, player.name, player.score0, score_inactivity.duration, planet.galaxy,planet.system,planet.position
+    FROM player,planet,(
+SELECT s1.playerId playerId, s1.timestamp-min(s2.timestamp) duration FROM score_history s1, score_history s2 WHERE
+            s1.playerId=s2.playerId AND s1.timestamp=(SELECT timestamp from score_history ORDER BY timestamp DESC LIMIT 1) AND
+            s1.score0=s2.score0
+            GROUP BY s1.playerId
+            HAVING duration>%d) score_inactivity
+    WHERE score_inactivity.playerId = player.id AND planet.playerId=player.id
+    AND player.score0>%d AND player.score0<%d
+    AND
+        planet.galaxy=%d AND planet.system>%d AND planet.system<%d
+    ORDER BY duration DESC, player.score0 DESC, player.id
+        """ % (duration, minScore, maxScore, galaxy, minSys, maxSys)
+    rows = query(q)
+    lastId = 0
+    retStr = []
+    for row in rows:
+        id, name, score, duration, galaxy, system, position = row
+        durTime = str(datetime.timedelta(seconds=duration))
+        if id != lastId:
+            if id != 0:
+                retStr.append("\n")
+            retStr.append("%s (%d/%s) %d:%d:%d" % (name, score, durTime, galaxy, system, position))
+            lastId = id
+        else:
+            retStr.append(" %d:%d:%d" % (galaxy, system, position))
+    return retStr
+
 
 
 

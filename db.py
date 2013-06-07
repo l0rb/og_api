@@ -138,7 +138,7 @@ SELECT s1.playerId playerId, s1.timestamp-min(s2.timestamp) duration FROM score_
             GROUP BY s1.playerId
             HAVING duration>%d) score_inactivity
     WHERE score_inactivity.playerId = player.id AND planet.playerId=player.id
-    AND player.status NOT LIKE "%i%" AND player.status NOT LIKE "%I%" AND player.status NOT LIKE "%u%"
+    AND player.status NOT LIKE "%%i%%" AND player.status NOT LIKE "%%I%%" AND player.status NOT LIKE "%%u%%"
     AND player.score0>%d AND player.score0<%d
     AND planet.galaxy=%d AND planet.system>%d AND planet.system<%d
     ORDER BY duration DESC, player.score0 DESC, player.id

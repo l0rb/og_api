@@ -38,3 +38,69 @@ with dependency:
 
 This ircbot will directly call the api and therefore doesn't need to be so defensive.
 Also it supports automatic reloading of the irc_handler.py in which you will find most of the logic.
+
+
+** db **
+The database is done with sqlite and requires this python extension - also you need to copy the ogapi.example.sqlite to ogapi.sqlite
+
+The layout of the table is this:
+
+*planet*
+* id int(11)
+* playerId int(11)
+* galaxy tinyint(3)
+* system tinyint(3)
+* position smallint(5)
+* name varchar(255) 
+
+*alliance*
+* id int
+* tag text
+* name text
+* logo text NULL
+* homepage text NULL
+* open integer
+
+*score_history*
+* playerId integer
+* timestamp integer
+* ships integer
+* position0 integer
+* score0 integer
+* position1 integer
+* score1 integer
+* position2 integer
+* score2 integer
+* position3 integer
+* position5 integer
+* score4 integer
+* position4 integer
+* score3 integer
+* score5 integer
+* position6 integer
+* score6 integer
+* position7 integer
+* score7 integer 
+
+*player*
+* id integer
+* name text
+* allianceId integer NULL
+* status text
+* ships integer NULL
+* position0 integer NULL
+* score0 integer NULL
+* position1 integer NULL
+* score1 integer NULL
+* position2 integer NULL
+* score2 integer NULL
+* position3 integer NULL
+* position5 integer NULL
+* score4 integer NULL
+* position4 integer NULL
+* score3 integer NULL
+* score5 integer NULL
+* position6 integer NULL
+* score6 integer NULL
+* position7 integer NULL
+* score7 integer NULL

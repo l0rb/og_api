@@ -127,29 +127,29 @@ def realy_handle_command(connection, e, command):
     elif command.startswith("inactive"):
         args = command[9:].split(" ")
         import db
-        if len(args) < 1:
-            connection.privmsg(target, "usage !inactive yourpos [radius] [duration] [minscore] [maxscore]")
-            connection.privmsg(target, "example !inactive 3:338 15 2 5000 20000 - sucht alle planeten zwischen 3:323 und 3:353 wo spieler 2Tage inaktive und zw. 5k und 20k punkte hat")
-            return
         radius = 15
         duration = 60*60*24
         minScore = 5000
         maxScore = 9999999
-        if len(args) < 2:
-            position = args[0]
-        if len(args) < 3:
-            radius = args[1]
-        if len(args) < 4:
-            duration = int(args[2]) * 60*60*24
-        if len(args) < 4:
-            minScore = args[3]
-        if len(args) < 5:
-            maxScore = args[4]
+        if len(args) < 1 or args[0].find(":") == -1:
+            connection.privmsg(target, "usage !inactive yourpos [radius] [duration] [minscore] [maxscore]")
+            connection.privmsg(target, "example !inactive 3:338 15 2 5000 20000 - sucht alle planeten zwischen 3:323 und 3:353 wo spieler 2Tage inaktive und zw. 5k und 20k punkte hat")
+            return
+        if len(args) > 0:
+             position = args[0]
+        if len(args) > 1:
+            radius = int(args[1])
+        if len(args) > 2:
+             duration = int(args[2]) * 60*60*24
+        if len(args) > 3:
+            minScore = int(args[3])
+        if len(args) > 4:
+            maxScore = int(args[4])
 
         max = 5
         res = "".join(db.listInactivityPlayer(position, radius, duration, minScore, maxScore)).split("\n")
         for line in res:
-            print line
+            connection.privmsg(target, line)
             max -= 1
             if max == 0:
                 break

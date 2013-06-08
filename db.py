@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import sqlite3
 from api import Api
-import atexit
 import datetime
 
 
@@ -20,6 +19,7 @@ def update(server, consoleOut=True):
     all = len(allAlliances)
     count = 0
     insertData = []
+    print "updating alliance"
     for ally in allAlliances:
         count += 1
         print "%d/%d\r" % (count, all),
@@ -28,6 +28,7 @@ def update(server, consoleOut=True):
 
     cur.executemany("""INSERT INTO "alliance" ("id", "tag", "name", "logo", "homepage", "open") VALUES (?, ?, ?, ?, ?, ?)""",
             insertData)
+    print ""
 
 
     # player + planets
@@ -38,6 +39,7 @@ def update(server, consoleOut=True):
     appendList = []
     count = 0
     all = len(allPlayers)
+    print "updating player - async download"
     for playerData in allPlayers:
         id = playerData["id"]
         appendList.append("?id=%d"%id)
@@ -46,12 +48,14 @@ def update(server, consoleOut=True):
             print "%d/%d\r"%(count,all),
             api._doApiRequestAsync("playerData", appendList)
             appendList = []
+    print ""
 
     cur.execute("DELETE FROM player")
     cur.execute("DELETE FROM planet")
     count = 0
     insertData = []
     insertPlanetData = []
+    print "updating player"
     for playerData in allPlayers:
         playerId = playerData["id"]
         count += 1
@@ -67,6 +71,7 @@ def update(server, consoleOut=True):
             coord, pName, pId = planet
             coord = coord.split(":")
             insertPlanetData.append((player["id"], pId, pName, int(coord[0]), int(coord[1]), int(coord[2])))
+    print ""
 
     cur.executemany("""INSERT INTO `player` (`id`, `name`, `allianceId`, `status`) VALUES (?, ?, ?, ?)""", insertData)
     cur.executemany("""INSERT INTO `planet` (`playerId`, `id`, `name`, `galaxy`, `system`, `position`) VALUES (?, ?, ?, ?, ?, ?)""",
@@ -82,6 +87,7 @@ def update(server, consoleOut=True):
     all = len(allHighscore[0])
     count = 0
     updateData = []
+    print "updating highscore"
     cur.execute("DELETE FROM score_history WHERE `timestamp`=%d"% timestamp)
     for playerId in allHighscore[0]:
         count += 1
@@ -112,6 +118,7 @@ def update(server, consoleOut=True):
             # posType=0 but not in posType=3
             # since it is just a new player, don't do much about it
             print playerId
+    print ""
 
     cur.executemany("""UPDATE `player` SET ships = ?, position0 = ?, position1 = ?, position2 = ?, position3 = ?, position4 = ?, position5 = ?,
             position6 = ?, position7 = ?, score0 = ?, score1 = ?, score2 = ?, score3 = ?, score4 = ?, score5 = ?, score6 = ?, score7 = ?  WHERE
@@ -126,9 +133,10 @@ def update(server, consoleOut=True):
     # update score inactivity
     cur.execute("SELECT timestamp FROM score_inactivity WHERE timestamp=%d" % highscoreTimestamp)
     if cur.fetchone() is None:
+        print "updating inactivity"
         # read existing data
         cur.execute("SELECT playerId, score_0, timestamp, duration FROM score_inactivity")
-        data = cur.fetchmany()
+        data = cur.fetchall()
         scoreInactivity = {}
         for row in data:
             playerId, score_0, timestamp, duration = row
@@ -158,7 +166,6 @@ def query(query):
     conn = sqlite3.connect('ogapi.sqlite')
     cur = conn.cursor()
     cur.execute(query)
-    ret = []
     return cur.fetchall()
 
 

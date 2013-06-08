@@ -171,6 +171,7 @@ def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, 
     FROM player,planet,score_inactivity
     WHERE score_inactivity.playerId = player.id AND planet.playerId=player.id
     AND player.status NOT LIKE "%%i%%" AND player.status NOT LIKE "%%I%%" AND player.status NOT LIKE "%%u%%"
+    AND score_inactivity.duration >= %d
     AND player.score0>%d AND player.score0<%d
     AND planet.galaxy=%d AND planet.system>%d AND planet.system<%d
     ORDER BY score_inactivity.duration DESC, player.score0 DESC, player.id

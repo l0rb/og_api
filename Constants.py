@@ -301,11 +301,79 @@ def buildingTopList(buildings, research=None, temp=50, mse=None):
 
 
 
+shipSpeeds = {
+        #shipId: (research, baseSpeed)
+        202: (115, 5000),       #smallCargo
+        203: (115, 7500),       #largeCargo
+        204: (115, 12500),      #lightFighter
+        205: (117, 10000),      #heavyFighter
+        206: (117, 15000),      #cruiser
+        207: (118, 10000),      #battleShip
+        208: (117, 2500),       #colonyShip
+        209: (115, 2000),       #recycler
+        210: (115, 100000000),  #espionageProbe
+        211: (117, 4000),       #bomber
+        213: (118, 5000),       #destroyer
+        214: (118, 100),        #deathStar
+        215: (118, 10000),      #battlecruiser
+}
+# when a particular research is reached, it will take that one
+# and the base Speed improves also
+shipImprovedSpeeds = {
+        #shipId: (research, minLevel, baseSpeed)
+        202: (117, 5, 10000),      #smallCargo
+        211: (118, 8, 5000),       #bomber
+    }
 
+def distance(coord1, coord2):
+    if coord1[0] != coord2[0]:
+        return abs(coord1[0]-coord2[0]) * 20000
+    if coord1[1] != coord2[1]:
+        return abs(coord1[1]-coord2[1]) * 95 + 2700
+    if coord1[2] != coord2[2]:
+        return abs(coord1[2]-coord2[2]) * 5 + 1000
+    return 5
 
+def speed(shipId, research):
+    rId = 115
+    lvl = 0
+    baseSpeed = 0
+    # try to find if this ship has an improved speed
+    try:
+        # raises exception, if this ship can't have improved speed
+        rId, rMinLvl, baseSpeed = shipImprovedSpeeds[shipId]
+        # raises exception, if the research isn't far enough for improved speed
+        if rMinLvl > research[rId]:
+            raise Exception
+        lvl = research[rId]
+    except:
+        pass
+    if lvl == 0: # means we have an improved base speed
+        rId, baseSpeed = shipSpeeds[shipId]
+        try:
+            lvl = research[rId]
+        except:
+            baseSpeed = 0
+            pass
+    if rId == 115:
+        return round(baseSpeed * (1 + 0.1 * lvl))
+    if rId == 117:
+        return round(baseSpeed * (1 + 0.2 * lvl))
+    if rId == 118:
+        return round(baseSpeed * (1 + 0.3 * lvl))
 
+# speedfactor is how many percent of speed is used
+# speeduni is wether the universe is double or quadruple speed
+def duration(speed, distance, speedFactor=1, speedUni=1):
+    if speed == 0:
+        return 999999999
+    return round(3500 / speedFactor * (distance * 10 / speed)**0.5 + 10)
 
-
+# convenience funtion for duration calculation in one go
+def easyDuration(coord1, coord2, shipId, research, speedFactor=1, speedUni=1):
+    dist = distance(coord1, coord2)
+    sp = speed(shipId, research)
+    return duration(sp, dist, speedFactor, speedUni)
 
 
 
@@ -341,3 +409,22 @@ if __name__ == "__main__":
     assert(getCosts(2, 19) == {"metal":226673, "crystal":113336, "deuterium":0})
     assert(getCosts(3, 16) == {"metal":98526, "crystal":32842, "deuterium":0})
     assert(getCosts(4, 23) == {"metal":561137, "crystal":224454, "deuterium":0})
+
+
+    assert(distance((1,4,3), (1,4,7)) == 1020)
+    assert(distance((1,5,3), (1,7,3)) == 2890)
+    assert(distance((1,5,2), (1,7,14)) == 2890)
+    assert(distance((1,5,3), (3,7,5)) == 40000)
+    assert(distance((1,105,8), (3,427,5)) == 40000)
+    assert(distance((2,5,3), (3,227,5)) == 20000)
+    assert(distance((1,10,3), (1,193,5)) == 20085)
+    assert(distance((1,10,3), (1,403,5)) == 40035)
+
+    assert(speed(204, {115:4}) == 17500)
+    assert(speed(204, {}) == 0.0)
+    assert(speed(202, {115:15}) == 12500)
+    assert(speed(202, {115:15,117:7}) == 24000)
+    assert(speed(202, {115:15,117:5}) == 20000)
+    assert(speed(202, {115:15,117:4}) == 12500)
+    assert(speed(203, {115:15,117:4}) == 18750)
+    assert(duration(18750, 1020) == 2591)

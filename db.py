@@ -119,6 +119,37 @@ def update(server, consoleOut=True):
     cur.executemany("""INSERT INTO score_history ( ships, position0, position1, position2, position3, position5, position4, position6,
     position7, score0, score1, score2, score3, score4, score5, score6, score7 , playerId , `timestamp`) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?, ?, ?)""", updateData)
+    highscoreTimestamp = timestamp
+
+
+
+    # update score inactivity
+    cur.execute("SELECT timestamp FROM score_inactivity WHERE timestamp=%d" % highscoreTimestamp)
+    if cur.fetchone() is None:
+        # read existing data
+        cur.execute("SELECT playerId, score_0, timestamp, duration FROM score_inactivity")
+        data = cur.fetchmany()
+        scoreInactivity = {}
+        for row in data:
+            playerId, score_0, timestamp, duration = row
+            scoreInactivity[playerId] = (score_0, timestamp, duration)
+        # delete it
+        cur.execute("DELETE FROM score_inactivity")
+        # create insert
+        updateData = []
+        for playerId in allHighscore[0]:
+            score = allHighscore[0][playerId]["score"]
+            timestamp = highscoreTimestamp
+            duration = 0
+            score_0 = score
+            try:
+                score_0, timestamp, duration = scoreInactivity[playerId]
+            except:
+                pass
+            if score <= score_0:
+                duration += highscoreTimestamp-timestamp
+            updateData.append((playerId, score, duration, highscoreTimestamp))
+        cur.executemany("""INSERT INTO `score_inactivity` (playerId, score_0, duration, timestamp) VALUES (?,?,?,?)""", updateData)
 
     conn.commit()
     conn.close()
@@ -137,17 +168,12 @@ def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, 
     minSys = system-radius
     maxSys = system+radius
     q = """SELECT player.id, player.name, player.score0, score_inactivity.duration, planet.galaxy,planet.system,planet.position
-    FROM player,planet,(
-SELECT s1.playerId playerId, s1.timestamp-min(s2.timestamp) duration FROM score_history s1, score_history s2 WHERE
-            s1.playerId=s2.playerId AND s1.timestamp=(SELECT timestamp from score_history ORDER BY timestamp DESC LIMIT 1) AND
-            s1.score0=s2.score0
-            GROUP BY s1.playerId
-            HAVING duration>%d) score_inactivity
+    FROM player,planet,score_inactivity
     WHERE score_inactivity.playerId = player.id AND planet.playerId=player.id
     AND player.status NOT LIKE "%%i%%" AND player.status NOT LIKE "%%I%%" AND player.status NOT LIKE "%%u%%"
     AND player.score0>%d AND player.score0<%d
     AND planet.galaxy=%d AND planet.system>%d AND planet.system<%d
-    ORDER BY duration DESC, player.score0 DESC, player.id
+    ORDER BY score_inactivity.duration DESC, player.score0 DESC, player.id
         """ % (duration, minScore, maxScore, galaxy, minSys, maxSys)
     rows = query(q)
     lastId = 0

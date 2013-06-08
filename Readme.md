@@ -116,12 +116,10 @@ s1.playerId=s2.playerId AND s1.timestamp=(SELECT timestamp from score_history OR
 GROUP BY s1.playerId
 HAVING s1.timestamp-60*60*24>min(s2.timestamp);
 * select players near you with score_inactivity
-* SELECT player.name, player.score0, score_inactivity.duration, planet.galaxy,planet.system,planet.position FROM player,planet,(
-SELECT s1.playerId playerId, s1.timestamp-min(s2.timestamp) duration FROM score_history s1, score_history s2 WHERE 
-s1.playerId=s2.playerId AND s1.timestamp=(SELECT timestamp from score_history ORDER BY timestamp DESC LIMIT 1) AND s1.score0=s2.score0
-GROUP BY s1.playerId
-HAVING s1.timestamp>min(s2.timestamp)) score_inactivity WHERE score_inactivity.playerId = player.id AND planet.playerId=player.id AND
+* SELECT player.name, player.score0, score_inactivity.duration, planet.galaxy,planet.system,planet.position FROM player,planet, score_inactivity
+WHERE score_inactivity.playerId = player.id AND planet.playerId=player.id AND
 planet.galaxy=3 AND planet.system>323 AND planet.system<353;
+ORDER BY score_inactivity.duration DESC, player.score0 DESC, player.id
 * select inactive players near you
 * SELECT player.name, player.status, planet.galaxy, planet.system, planet.position FROM player,planet WHERE planet.playerId=player.id AND
  planet.galaxy=1 AND planet.system>454 AND planet.system<494 AND (player.status LIKE "%i%" OR player.status LIKE "%I%") AND player.status

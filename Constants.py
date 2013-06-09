@@ -250,9 +250,9 @@ def prod_met(level=1,plasma=0):
    return floor( (30*level*pow(1.1,level)) * (1+plasma_metbonus*plasma) ) + 30
 
 def prod_met_gain(level=1,plasma=0):
-   m1= prod_met(level-1,plasma)
-   m2= prod_met(level,plasma)
-   return m2-m1
+    m1= prod_met(level-1,plasma)
+    m2= prod_met(level,plasma)
+    return m2-m1
 
 # TODO floor or ceil? (one display in ogame shows floor, 2 other show ceil)
 def prod_kris(level=1,plasma=0):
@@ -276,7 +276,7 @@ def atime(level, bId, plasma=0, mtemp=50, mse=None):
     """ Return time in seconds after which the mine with the given level
     has paid off itself. """
     if not mse: mse = [2.0, 1.0, 1.0]
-    c = getCosts(bId, level-1)
+    c = getCosts(bId, level)
     if bId == 1:
         p = to_mse(metal=prod_met_gain(level,plasma), mse=mse)
     elif bId == 2:
@@ -296,7 +296,9 @@ def buildingTopList(buildings, research=None, temp=50, mse=None):
     t= []
     for bId in buildings:
         lvl = buildings[bId]
-        t.append({'bId': bId, 'atime': atime(lvl+1,bId,plasma,temp, mse=mse)})
+        at = atime(lvl+1,bId,plasma,temp, mse=mse)
+        if at != False:
+            t.append({'bId': bId, 'atime': at})
     return sorted(t, key=lambda x: x["atime"])
 
 

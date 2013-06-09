@@ -156,6 +156,8 @@ def update(server, consoleOut=True):
                 pass
             if score <= score_0:
                 duration += highscoreTimestamp-timestamp
+            else:
+                duration = 0
             updateData.append((playerId, score, duration, highscoreTimestamp))
         cur.executemany("""INSERT INTO `score_inactivity` (playerId, score_0, duration, timestamp) VALUES (?,?,?,?)""", updateData)
 

@@ -192,7 +192,7 @@ def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, 
         id, name, score, duration, galaxy, system, position = row
         durTime = str(datetime.timedelta(seconds=duration))
         if id != lastId:
-            if id != 0:
+            if lastId != 0:
                 retStr.append("\n")
             retStr.append("%s (%d/%s) %d:%d:%d" % (name, score, durTime, galaxy, system, position))
             lastId = id

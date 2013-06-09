@@ -117,9 +117,13 @@ def realy_handle_command(command, connection=False, target=False):
             return
         retStr = res[:9]
 
-    elif command.startswith("inactive"):
+    elif command.startswith("inactive") or command.startswith("ainactive"):
         args = command[9:].split(" ")
         import db
+        amount = 6
+        if command.startswith("ainactive"):
+            args = command[10:].split(" ")
+            amount = 12
         radius = 15
         duration = 60*60*24
         minScore = 5000
@@ -138,9 +142,7 @@ def realy_handle_command(command, connection=False, target=False):
                 minScore = int(args[3])
             if len(args) > 4:
                 maxScore = int(args[4])
-            res = "".join(db.listInactivityPlayer(position, radius, duration, minScore, maxScore)).split("\n")
-            retStr = res[:5]
-
+            retStr = "".join(db.listInactivityPlayer(position, radius, duration, minScore, maxScore, amount)).split("\n")
     return retStr
 
 

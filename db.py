@@ -171,7 +171,8 @@ def query(query):
     return cur.fetchall()
 
 
-def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, maxScore=9999999):
+def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, maxScore=9999999, amount=50):
+    from prettytable import PrettyTable
     galaxy = int(position.split(":")[0])
     system = int(position.split(":")[1])
     minSys = system-radius
@@ -186,19 +187,40 @@ def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, 
     ORDER BY score_inactivity.duration DESC, player.score0 DESC, player.id
         """ % (duration, minScore, maxScore, galaxy, minSys, maxSys)
     rows = query(q)
+    if len(rows) == 0:
+        return ""
+
+    newRows = []
     lastId = 0
-    retStr = []
+    newRow = False
+    i = 0
     for row in rows:
         id, name, score, duration, galaxy, system, position = row
         durTime = str(datetime.timedelta(seconds=duration))
         if id != lastId:
             if lastId != 0:
-                retStr.append("\n")
-            retStr.append("%s (%d/%s) %d:%d:%d" % (name, score, durTime, galaxy, system, position))
+                newRows.append(newRow)
+                i += 1
+                if i == amount:
+                    break
+            newRow = [id, name, score, duration, ["%d:%d:%d" % (galaxy, system, position)]]
             lastId = id
         else:
-            retStr.append(" %d:%d:%d" % (galaxy, system, position))
-    return retStr
+            newRow[4].append("%d:%d:%d" % (galaxy, system, position))
+
+
+    t = PrettyTable(["Name", "Score", "Duration", "Coords"])
+    t.align["Name"] = "l"
+    t.align["Score"] = "r"
+    t.align["Duration"] = "r"
+    t.align["Coords"] = "l"
+    for row in newRows:
+        id, name, score, duration, coords = row
+        for i in range(0, len(coords)):
+            coords[i] = coords[i].ljust(8)
+        durTime = str(datetime.timedelta(seconds=duration))
+        t.add_row([name, score, str(durTime).replace(" day, ", "d ")[:-6]+"h", " ".join(coords)])
+    return t.get_string(border=False, header=False, padding_width=1)
 
 
 

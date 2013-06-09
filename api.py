@@ -13,6 +13,7 @@ except:
     #import cElementTree as etree
 import Levenshtein
 import time
+from prettytable import PrettyTable
 
 
 
@@ -317,38 +318,55 @@ class Api(object):
             retStr.append("%s - similarity:%.2f\n" % (player_info["name"], player_info["sim"]))
 
         type_to_name = ["Total", "Economy", "Research", "Military", "Military Built", "Military Destroyed", "Military Lost", "Honor"]
-        if self.quick:
-            type = 0
-            position = player_info["position"][type]
-            if player_info["status"]:
-                retStr.append("%s, " % player_info["status"])
-            retStr.append("%s: %04d - %d  " % (type_to_name[type], position["position"], position["score"]))
-            if self.server in self.ogniter_mapping:
-                retStr.append("http://www.ogniter.org/de/%d/player/%d\n" % (self.ogniter_mapping[self.server], int(player_info["id"])))
-            else:
-                retStr.append("\n")
+        type = 0
+        position = player_info["position"][type]
+        if player_info["status"]:
+            retStr.append("%s, " % player_info["status"])
+        retStr.append("%s: %04d - %d  " % (type_to_name[type], position["position"], position["score"]))
+        if self.server in self.ogniter_mapping:
+            retStr.append("http://www.ogniter.org/de/%d/player/%d\n" % (self.ogniter_mapping[self.server], int(player_info["id"])))
         else:
+            retStr.append("\n")
+        if not self.quick:
             if player_info["status"]:
                 retStr.append("Status: %s\n" % player_info["status"])
-            for type in player_info["position"]:
-                position = player_info["position"][type]
-                retStr.append("%s: %04d - %d\n" % (type_to_name[type].ljust(18), position["position"], position["score"]))
-        if self.quick:
-            i = 0
-            for planet in player_info["planets"]:
-                i += 1
-                retStr.append("%s %s  " % (planet[0].ljust(8), planet[1]))
-                if i%2 == 0:
-                    retStr.append("\n")
-            if i > 1 and i%2 != 0:
-                retStr.append("\n")
-        else:
-            for planet in player_info["planets"]:
-                retStr.append("%s %s\n" % (planet[0].ljust(8), planet[1]))
+            t = PrettyTable(["Type", "Position", "Score", "Type2", "Position2", "Score2"])
+            t.align["Type"] = "l"
+            t.align["Position"] = "r"
+            t.align["Score"] = "r"
+            t.align["Type2"] = "l"
+            t.align["Position2"] = "r"
+            t.align["Score2"] = "r"
+            for type in range(0,8,2):
+                t.add_row([type_to_name[type], player_info["position"][type]["position"], player_info["position"][type]["score"],
+                    type_to_name[type+1], player_info["position"][type+1]["position"], player_info["position"][type+1]["score"]])
+            t.set_style(11)
+            t_str = t.get_string(border=False,header=False, padding_width=1)
+            retStr.append(t_str+"\n")
+
+        t = PrettyTable(["Coord", "Name"])
+        t.align["Coord"] = "l"
+        t.align["Name"] = "l"
+        for planet in player_info["planets"]:
+            t.add_row([planet[0], planet[1]])
+        t.set_style(11)
+        t_str = t.get_string(border=False, header=False, padding_width=1)
+        # make the table horizontal wider
+        tableRows = t_str.split("\n")
+        if len(tableRows) > 1:
+            # take lower half and append it to the upper half
+            half = len(tableRows)/2
+            for i in range(0, half):
+                tableRows[i] += tableRows[i+1]
+                del(tableRows[i+1])
+            t_str = "\n".join(tableRows)
+        retStr.append(t_str+"\n")
+
+
         if not player_info["ally"]:
-            retStr.append("No ally\n")
+            retStr.append("No ally")
         else:
-            retStr.append("%s - %s\n" % (player_info["ally"]["tag"], player_info["ally"]["name"]))
+            retStr.append("%s - %s" % (player_info["ally"]["tag"], player_info["ally"]["name"]))
         return retStr
 
     def getAllianceString(self, tag):

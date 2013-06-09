@@ -18,6 +18,7 @@ when you add -q 1 it will print a shorter list
 * requests
 * python 2.7
 * levenshtein
+* prettytable
 
 
 **How it can be used in irc:**

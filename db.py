@@ -219,6 +219,12 @@ def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, 
         for i in range(0, len(coords)):
             coords[i] = coords[i].ljust(8)
         durTime = str(datetime.timedelta(seconds=duration))
+        score = float(score)/1000
+        if score < 20:
+            score = round(score, 1)
+        else:
+            score = int(score)
+        score = str(score)+"k"
         t.add_row([name, score, str(durTime).replace(" day, ", "d ")[:-6]+"h", " ".join(coords)])
     return t.get_string(border=False, header=False, padding_width=1)
 

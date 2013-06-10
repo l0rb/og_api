@@ -17,16 +17,8 @@ def handle_command(connection, e, command):
         print command
         retStr = realy_handle_command(command, connection=connection, target=target)
     except Exception, ex:
-        target = e.target
-        if e.type == "privmsg":
-            target = e.source.nick
-        try:
-            #connection.privmsg(e.source.nick, u"Du hast einen Fehler verursacht: %s" % str(ex))
-            connection.privmsg(target, u"Fehler, probier nochmal (Versuch 1/3)")
-        except:
-            pass
         print "error ", ex
-
+        retStr = [u"Fehler, probier nochmal (Versuch 1/3)"]
     for line in retStr:
         connection.privmsg(target, line)
 

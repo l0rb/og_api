@@ -318,7 +318,7 @@ class Api(object):
         if player_info["sim"] != 1.0:
             retStr.append("%s - similarity:%.2f\n" % (player_info["name"], player_info["sim"]))
 
-        type_to_name = ["Total", "Economy", "Research", "Military", "Military Built", "Military Destr.", "Military Lost", "Honor"]
+        type_to_name = ["Total", "Economy", "Research", "Military", "Military Lost", "Military Built", "Military Destr.", "Honor"]
         position = player_info["position"][0]
         if player_info["status"]:
             retStr.append("%s, " % player_info["status"])

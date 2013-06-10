@@ -5,6 +5,7 @@ from cache import FileCache
 from helper import textextract
 from datetime import datetime, timedelta
 import logging
+import os
 try:
     from lxml import etree
 except:
@@ -53,7 +54,7 @@ class Api(object):
                 # exception when response is "player not found"
                 timestamp = int(textextract(api_data, 'timestamp="', '"'))
             except:
-                timestamp = int(time.time())
+                timestamp = os.path.getmtime(self.cache.get_path(self.server+"_"+type+append))
             timestamp = datetime.fromtimestamp(timestamp)
             if timestamp + type_to_update_intervall[type] < datetime.now():
                 logger.info("Need download because %s is more than 12h old" % (self.server+"_"+type))

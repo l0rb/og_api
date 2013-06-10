@@ -143,6 +143,18 @@ def realy_handle_command(command, connection=False, target=False):
             if len(args) > 4:
                 maxScore = int(args[4])
             retStr = "".join(db.listInactivityPlayer(position, radius, duration, minScore, maxScore, amount)).split("\n")
+    elif command.startswith("diff"):
+        args = command[9:].split(" ")
+        import db
+        hours = 12
+        if len(args) < 1:
+            retStr.append("usage !diff playername [hours]")
+        else:
+            if len(args) > 0:
+                 player = args[0]
+            if len(args) > 1:
+                hours = int(args[1])
+            retStr = db.highscoreChange(server, player, hours).split("\n")
     return retStr
 
 
@@ -154,7 +166,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='get info from ogame api db',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--command', '-c', type=str, help='command to execute')
+    parser.add_argument('--command', '-c', type=unicode, help='command to execute')
     args = parser.parse_args()
 
     print "\n".join(realy_handle_command(args.command))

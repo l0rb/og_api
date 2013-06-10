@@ -170,6 +170,65 @@ def query(query):
     cur.execute(query)
     return cur.fetchall()
 
+def highscoreChange(server, player, hours=24):
+    from prettytable import PrettyTable
+    import time
+    api = Api(server, "var")
+    playerId, playerName, sim = api.findPlayer(player, 1, True)
+    # the old data
+    q = """SELECT timestamp, ships, position0, position1, position2, position3, position5, position4, position6,
+            position7, score0, score1, score2, score3, score4, score5, score6, score7
+            FROM score_history
+            WHERE playerId=%d AND timestamp < %d
+            ORDER BY timestamp DESC
+            LIMIT 1
+        """ % (playerId, time.time()-hours*60*60)
+    rows = query(q)
+    if len(rows) == 0:
+        return "Not found"
+    old = rows[0]
+    #print old
+    # the new data
+    q = """SELECT timestamp, ships, position0, position1, position2, position3, position5, position4, position6,
+            position7, score0, score1, score2, score3, score4, score5, score6, score7
+            FROM score_history
+            WHERE playerId=%d
+            ORDER BY timestamp DESC
+            LIMIT 1
+        """ % playerId
+    rows = query(q)
+    if len(rows) == 0:
+        return ""
+    new = rows[0]
+    #print new
+
+    retStr = []
+    if sim != 1.0:
+        retStr.append("%s - similarity:%.2f\n" % (playerName, sim))
+    retStr.append("Highscorediff: %dh\n" % round((new[0]-old[0])/(60*60)))
+
+    t = PrettyTable(["Type", "Position", "Score", "Type2", "Position2", "Score2"])
+    t.align["Type"] = "l"
+    t.align["Position"] = "r"
+    t.align["Score"] = "r"
+    t.align["Type2"] = "l"
+    t.align["Position2"] = "r"
+    t.align["Score2"] = "r"
+    for type in range(0,len(api.highscore_type_to_name),2):
+        t.add_row([
+            api.highscore_type_to_name[type], new[2+type]-old[2+type], new[10+type]-old[10+type],
+            api.highscore_type_to_name[type+1], new[2+type+1]-old[2+type+1], new[10+type+1]-old[10+type+1],
+            ])
+    t.set_style(11)
+    t_str = t.get_string(border=False,header=False, padding_width=1).split("\n")
+    new_t_str = []
+    for line in t_str:
+        new_t_str.append(line[1:])
+    retStr.append("\n".join(new_t_str)+"\n")
+    retStr.append("ships: %d" % (new[1]-old[1]))
+
+    return "".join(retStr)
+
 
 def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, maxScore=9999999, amount=50):
     from prettytable import PrettyTable
@@ -242,9 +301,13 @@ if __name__ == "__main__":
     parser.add_argument('--server', '-s', type=str, help='server like uni117.ogame.de')
     parser.add_argument('--update', '-u', type=int, help='update the database')
     parser.add_argument('--query', '-q', type=str, help='run a readonly query on the db')
+    parser.add_argument('--change', '-c', type=int, help='print highscoreChange with x hours')
+    parser.add_argument('--player', '-p', type=unicode, help='playername')
     args = parser.parse_args()
 
     if args.update:
         update(args.server)
     if args.query:
         print query(args.query)
+    if args.change:
+        print highscoreChange(args.server, args.player, args.change)

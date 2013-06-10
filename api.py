@@ -28,6 +28,7 @@ class Api(object):
     ogniter_mapping = {
             'uni117.ogame.de': 136
             }
+    highscore_type_to_name = ["Total", "Economy", "Research", "Military", "Military Lost", "Military Built", "Military Destr.", "Honor"]
 
     def __init__(self, server, cache_dir, quick=False):
         self.server = server
@@ -287,12 +288,14 @@ class Api(object):
                 })
         return (int(root.get("timestamp")), ret)
 
-    def findPlayer(self, name, find):
+    def findPlayer(self, name, find, justMatch=False):
         retStr = []
         root = self._getLxmlRoot(self._doApiRequest("players"))
         matches = self._findMatch(root.findall(".//player"), "name", name.strip())
         for i in range(0, find):
             el, sim = matches[i]
+            if justMatch:
+                return int(el.get("id")), el.get("name"), sim
             retStr.append("%s - %.2f" % (el.get("name"), sim))
             if not self.quick or i%2 == 1:
                 retStr.append("\n")
@@ -318,15 +321,13 @@ class Api(object):
         if player_info["sim"] != 1.0:
             retStr.append("%s - similarity:%.2f\n" % (player_info["name"], player_info["sim"]))
 
-        type_to_name = ["Total", "Economy", "Research", "Military", "Military Lost", "Military Built", "Military Destr.", "Honor"]
         position = player_info["position"][0]
         if player_info["status"]:
             retStr.append("%s, " % player_info["status"])
         retStr.append("%04d/%d " % (position["position"], position["score"]))
         if self.server in self.ogniter_mapping:
-            retStr.append("http://www.ogniter.org/de/%d/player/%d\n" % (self.ogniter_mapping[self.server], int(player_info["id"])))
-        else:
-            retStr.append("\n")
+            retStr.append("http://www.ogniter.org/de/%d/player/%d" % (self.ogniter_mapping[self.server], int(player_info["id"])))
+        retStr.append("\n")
         if not self.quick:
             if player_info["status"]:
                 retStr.append("Status: %s\n" % player_info["status"])
@@ -337,9 +338,9 @@ class Api(object):
             t.align["Type2"] = "l"
             t.align["Position2"] = "r"
             t.align["Score2"] = "r"
-            for type in range(0,8,2):
-                t.add_row([type_to_name[type], player_info["position"][type]["position"], player_info["position"][type]["score"],
-                    type_to_name[type+1], player_info["position"][type+1]["position"], player_info["position"][type+1]["score"]])
+            for type in range(0,len(self.highscore_type_to_name),2):
+                t.add_row([self.highscore_type_to_name[type], player_info["position"][type]["position"], player_info["position"][type]["score"],
+                    self.highscore_type_to_name[type+1], player_info["position"][type+1]["position"], player_info["position"][type+1]["score"]])
             t.set_style(11)
             t_str = t.get_string(border=False,header=False, padding_width=1).split("\n")
             new_t_str = []

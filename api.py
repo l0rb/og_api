@@ -318,12 +318,11 @@ class Api(object):
         if player_info["sim"] != 1.0:
             retStr.append("%s - similarity:%.2f\n" % (player_info["name"], player_info["sim"]))
 
-        type_to_name = ["Total", "Economy", "Research", "Military", "Military Built", "Military Destroyed", "Military Lost", "Honor"]
-        type = 0
-        position = player_info["position"][type]
+        type_to_name = ["Total", "Economy", "Research", "Military", "Military Built", "Military Destr.", "Military Lost", "Honor"]
+        position = player_info["position"][0]
         if player_info["status"]:
             retStr.append("%s, " % player_info["status"])
-        retStr.append("%s: %04d - %d  " % (type_to_name[type], position["position"], position["score"]))
+        retStr.append("%04d/%d " % (position["position"], position["score"]))
         if self.server in self.ogniter_mapping:
             retStr.append("http://www.ogniter.org/de/%d/player/%d\n" % (self.ogniter_mapping[self.server], int(player_info["id"])))
         else:
@@ -342,8 +341,11 @@ class Api(object):
                 t.add_row([type_to_name[type], player_info["position"][type]["position"], player_info["position"][type]["score"],
                     type_to_name[type+1], player_info["position"][type+1]["position"], player_info["position"][type+1]["score"]])
             t.set_style(11)
-            t_str = t.get_string(border=False,header=False, padding_width=1)
-            retStr.append(t_str+"\n")
+            t_str = t.get_string(border=False,header=False, padding_width=1).split("\n")
+            new_t_str = []
+            for line in t_str:
+                new_t_str.append(line[1:])
+            retStr.append("\n".join(new_t_str)+"\n")
 
         t = PrettyTable(["Coord", "Name"])
         t.align["Coord"] = "l"
@@ -361,7 +363,11 @@ class Api(object):
                 tableRows[i] += tableRows[i+1]
                 del(tableRows[i+1])
             t_str = "\n".join(tableRows)
-        retStr.append(t_str+"\n")
+        t_str = t_str.split("\n")
+        new_t_str = []
+        for line in t_str:
+            new_t_str.append(line[1:])
+        retStr.append("\n".join(new_t_str)+"\n")
 
 
         if not player_info["ally"]:

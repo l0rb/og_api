@@ -216,7 +216,7 @@ def highscoreChange(server, player, hours=24):
     t.align["Score2"] = "r"
     for type in range(0,len(api.highscore_type_to_name),2):
         t.add_row([
-            api.highscore_type_to_name[type], new[2+type]-old[2+type], new[10+type]-old[10+type],
+            api.highscore_type_to_name[type], old[2+type]-new[2+type], old[10+type]-new[10+type],
             api.highscore_type_to_name[type+1], new[2+type+1]-old[2+type+1], new[10+type+1]-old[10+type+1],
             ])
     t.set_style(11)

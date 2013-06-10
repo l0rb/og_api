@@ -7,7 +7,7 @@ api = api.Api(server, "var", quick=True)
 
 def handle_command(connection, e, command):
     target = e.target
-    if e.type == "privmsg" or command.startswith("help"):
+    if e.type == "privmsg" or command.startswith("!help"):
         target = e.source.nick
 
     try:
@@ -59,6 +59,8 @@ def realy_handle_command(command, connection=False, target=False):
         retStr.append(u"!fplayer bzw. falliance - gibt 6 spieler/allianz nach Ähnlichkeit zurück")
         retStr.append(u"!which met kris deut [plasma] [temp] [kurs] - gibt Vorschlag welche Mine am besten zu bauen ist - help which für mehr")
         retStr.append(u"!awhich same as which, but a bit more detailed")
+        retStr.append(u"!diff playername [hours] - highscore diff")
+        retStr.append(u"!inactive yourpos [radius] [duration] [minscore] [maxscore] - finds inactive")
 
     elif command == "help which":
         retStr.append(u"Beispielaufruf: !which 18 15 12 für met=18,kris=15 und deut=12 - plasmatech=0 und maximale temperatur=50 da nicht angegeben, kurs=2:1:1")
@@ -151,7 +153,7 @@ def realy_handle_command(command, connection=False, target=False):
             retStr.append("usage !diff playername [hours]")
         else:
             if len(args) > 0:
-                 player = args[0]
+                 player = args[0].decode("utf-8")
             if len(args) > 1:
                 hours = int(args[1])
             retStr = db.highscoreChange(server, player, hours).split("\n")
@@ -166,7 +168,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='get info from ogame api db',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--command', '-c', type=unicode, help='command to execute')
+    parser.add_argument('--command', '-c', type=str, help='command to execute')
     args = parser.parse_args()
 
     print "\n".join(realy_handle_command(args.command))

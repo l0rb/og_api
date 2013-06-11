@@ -138,7 +138,7 @@ def realy_handle_command(command, connection=False, target=False):
                 maxScore = int(args[4])
             retStr = "".join(db.listInactivityPlayer(position, radius, duration, minScore, maxScore, amount)).split("\n")
     elif command.startswith("diff"):
-        args = command[9:].split(" ")
+        args = command[5:].split(" ")
         import db
         hours = 12
         if len(args) < 1:

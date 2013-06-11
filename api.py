@@ -299,6 +299,8 @@ class Api(object):
             retStr.append("%s - %.2f" % (el.get("name"), sim))
             if not self.quick or i%2 == 1:
                 retStr.append("\n")
+            else:
+                retStr.append(" ")
         return retStr
 
     def findAlliance(self, tag, find):
@@ -310,6 +312,8 @@ class Api(object):
             retStr.append("%s - %.2f" % (el.get("tag"), sim))
             if not self.quick or i%2 == 1:
                 retStr.append("\n")
+            else:
+                retStr.append(" ")
         return retStr
 
     def getPlayerString(self, name):

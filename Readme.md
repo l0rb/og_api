@@ -124,4 +124,4 @@ ORDER BY score_inactivity.duration DESC, player.score0 DESC, player.id
 * select inactive players near you
 * SELECT player.name, player.status, planet.galaxy, planet.system, planet.position FROM player,planet WHERE planet.playerId=player.id AND
  planet.galaxy=1 AND planet.system>454 AND planet.system<494 AND (player.status LIKE "%i%" OR player.status LIKE "%I%") AND player.status
- NOT LIKE "%u%"
+ NOT LIKE "%v%"

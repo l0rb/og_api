@@ -242,7 +242,7 @@ def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, 
     q = """SELECT player.id, player.name, player.score0, score_inactivity.duration, planet.galaxy,planet.system,planet.position
     FROM player,planet,score_inactivity
     WHERE score_inactivity.playerId = player.id AND planet.playerId=player.id
-    AND player.status NOT LIKE "%%i%%" AND player.status NOT LIKE "%%I%%" AND player.status NOT LIKE "%%u%%"
+    AND player.status NOT LIKE "%%i%%" AND player.status NOT LIKE "%%I%%" AND player.status NOT LIKE "%%v%%"
     AND score_inactivity.duration >= %d
     AND player.score0>%d AND player.score0<%d
     AND planet.galaxy=%d AND planet.system>%d AND planet.system<%d

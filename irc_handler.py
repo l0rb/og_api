@@ -78,6 +78,7 @@ def realy_handle_command(command, connection=False, target=False):
             for i in args[6].split(":"):
                 mse.append(float(i))
         import Constants
+        Constants.loadLanguage("de")
         if command.startswith("which "):
             bId = Constants.buildingTopList(buildings, {122:plasma}, temp, mse)[0]["bId"]
             retStr.append("Am besten baust du: %s" % Constants.buildLabels[bId])

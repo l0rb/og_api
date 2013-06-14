@@ -345,6 +345,11 @@ class Api(object):
             for type in range(0,len(self.highscore_type_to_name),2):
                 t.add_row([self.highscore_type_to_name[type], player_info["position"][type]["position"], player_info["position"][type]["score"],
                     self.highscore_type_to_name[type+1], player_info["position"][type+1]["position"], player_info["position"][type+1]["score"]])
+            t.add_row(["ships", "", player_info["position"][3]["ships"],
+                # defense is (economy+research+military)-total
+                       "defense", "",
+                       (player_info["position"][1]["score"]+player_info["position"][2]["score"]+player_info["position"][3]["score"]) -
+                       player_info["position"][0]["score"]])
             t.set_style(11)
             t_str = t.get_string(border=False,header=False, padding_width=1).split("\n")
             new_t_str = []

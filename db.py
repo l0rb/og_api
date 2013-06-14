@@ -224,7 +224,7 @@ def highscoreChange(server, player, hours=24):
             ])
     t.add_row(["ships", "", new[1]-old[1],
         # defense is (economy+research+military)-total
-               "defense", "", ((new[10+1]-old[10+1])+(new[10+3]-old[10+3])+(new[10+4]-old[10+4]))-(new[10+0]-old[10+0])])
+               "defense", "", ((new[10+1]-old[10+1])+(new[10+3]-old[10+3])+(new[10+3]-old[10+3]))-(new[10+0]-old[10+0])])
     t.set_style(11)
     t_str = t.get_string(border=False,header=False, padding_width=1).split("\n")
     new_t_str = []

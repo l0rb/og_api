@@ -222,13 +222,15 @@ def highscoreChange(server, player, hours=24):
             # everything +1
             api.highscore_type_to_name[type+1], old[2+type+1]-new[2+type+1], new[10+type+1]-old[10+type+1],
             ])
+    t.add_row(["ships", "", new[1]-old[1],
+        # defense is (economy+research+military)-total
+               "defense", "", ((new[10+1]-old[10+1])+(new[10+3]-old[10+3])+(new[10+4]-old[10+4]))-(new[10+0]-old[10+0])])
     t.set_style(11)
     t_str = t.get_string(border=False,header=False, padding_width=1).split("\n")
     new_t_str = []
     for line in t_str:
         new_t_str.append(line[1:])
     retStr.append("\n".join(new_t_str)+"\n")
-    retStr.append("ships: %d" % (new[1]-old[1]))
 
     return "".join(retStr)
 

@@ -115,7 +115,12 @@ def realy_handle_command(command, connection=False, target=False):
             return
         if res is None:
             retStr = ["No result for your query"]
-        retStr = res[:9]
+        max = 9
+        for line in res:
+            max -= 1
+            if max == 0:
+                break
+            retStr.append(str(line).replace("\n", "")[:406]+" ...")
 
     elif command.startswith("inactive") or command.startswith("ainactive"):
         args = command[9:].split(" ")

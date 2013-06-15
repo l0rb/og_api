@@ -56,6 +56,7 @@ def update(server, consoleOut=True):
     insertData = []
     insertPlanetData = []
     print "updating player"
+    playerStatus = {}
     for playerData in allPlayers:
         playerId = playerData["id"]
         count += 1
@@ -64,6 +65,7 @@ def update(server, consoleOut=True):
             print "Some error occured with player %d %s" % (playerId, player)
             continue
         print "%d/%d\r" % (count, all),
+        playerStatus[playerId] = player["status"]
 
         player["status"] = playerData["status"]
         insertData.append((player["id"], player["name"], player["allianceId"], player["status"]))
@@ -93,8 +95,13 @@ def update(server, consoleOut=True):
         count += 1
         print "%d/%d\r" % (count, all),
         try:
+            status = playerStatus[playerId]
+        except:
+            status = "-"
+        try:
             updateData.append((
                     allHighscore[3][playerId]["ships"],
+                    status,
                     allHighscore[0][playerId]["position"],
                     allHighscore[1][playerId]["position"],
                     allHighscore[2][playerId]["position"],
@@ -120,10 +127,10 @@ def update(server, consoleOut=True):
             print playerId
     print ""
 
-    cur.executemany("""UPDATE `player` SET ships = ?, position0 = ?, position1 = ?, position2 = ?, position3 = ?, position4 = ?, position5 = ?,
+    cur.executemany("""UPDATE `player` SET ships = ?, status=?, position0 = ?, position1 = ?, position2 = ?, position3 = ?, position4 = ?, position5 = ?,
             position6 = ?, position7 = ?, score0 = ?, score1 = ?, score2 = ?, score3 = ?, score4 = ?, score5 = ?, score6 = ?, score7 = ?  WHERE
             id = ? AND ?>0""", updateData)
-    cur.executemany("""INSERT INTO score_history ( ships, position0, position1, position2, position3, position5, position4, position6,
+    cur.executemany("""INSERT INTO score_history ( ships, status=?, position0, position1, position2, position3, position5, position4, position6,
     position7, score0, score1, score2, score3, score4, score5, score6, score7 , playerId , `timestamp`) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?, ?, ?)""", updateData)
     highscoreTimestamp = timestamp

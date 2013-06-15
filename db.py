@@ -65,7 +65,7 @@ def update(server, consoleOut=True):
             print "Some error occured with player %d %s" % (playerId, player)
             continue
         print "%d/%d\r" % (count, all),
-        playerStatus[playerId] = player["status"]
+        playerStatus[playerId] = playerData["status"]
 
         player["status"] = playerData["status"]
         insertData.append((player["id"], player["name"], player["allianceId"], player["status"]))
@@ -130,9 +130,9 @@ def update(server, consoleOut=True):
     cur.executemany("""UPDATE `player` SET ships = ?, status=?, position0 = ?, position1 = ?, position2 = ?, position3 = ?, position4 = ?, position5 = ?,
             position6 = ?, position7 = ?, score0 = ?, score1 = ?, score2 = ?, score3 = ?, score4 = ?, score5 = ?, score6 = ?, score7 = ?  WHERE
             id = ? AND ?>0""", updateData)
-    cur.executemany("""INSERT INTO score_history ( ships, status=?, position0, position1, position2, position3, position5, position4, position6,
+    cur.executemany("""INSERT INTO score_history ( ships, status, position0, position1, position2, position3, position5, position4, position6,
     position7, score0, score1, score2, score3, score4, score5, score6, score7 , playerId , `timestamp`) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-    ?, ?, ?, ?, ?, ?, ?, ?)""", updateData)
+    ?, ?, ?, ?, ?, ?, ?, ?, ?)""", updateData)
     highscoreTimestamp = timestamp
 
 

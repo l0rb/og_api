@@ -66,6 +66,7 @@ The layout of the table is this:
 * playerId integer
 * timestamp integer
 * ships integer
+* status text (default is "-" for entries where one can't find a status)
 * position0 integer
 * score0 integer
 * position1 integer

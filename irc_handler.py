@@ -19,8 +19,11 @@ def handle_command(connection, e, command):
     except Exception, ex:
         print "error ", ex
         retStr = [u"Fehler, probier nochmal (Versuch 1/3)"]
-    for line in retStr:
-        connection.privmsg(target, line)
+    if not isinstance(retStr, list):
+        connection.privmsg(target, "Fehler :(")
+    else:
+        for line in retStr:
+            connection.privmsg(target, line)
 
 def realy_handle_command(command, connection=False, target=False):
     retStr = []
@@ -110,6 +113,8 @@ def realy_handle_command(command, connection=False, target=False):
                 retStr.append("Your query can't be longer than 445 chars")
                 retStr.append(command[8:])
             return
+        if res is None:
+            retStr = ["No result for your query"]
         retStr = res[:9]
 
     elif command.startswith("inactive") or command.startswith("ainactive"):

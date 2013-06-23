@@ -53,6 +53,8 @@ The layout of the table is this:
 * system tinyint(3)
 * position smallint(5)
 * name varchar(255) 
+* moonName text
+* moonSize int
 
 *alliance*
 * id int

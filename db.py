@@ -70,13 +70,13 @@ def update(server, consoleOut=True):
         player["status"] = playerData["status"]
         insertData.append((player["id"], player["name"], player["allianceId"], player["status"]))
         for planet in player["planets"]:
-            coord, pName, pId = planet
+            coord, pName, pId, moonName, moonSize = planet
             coord = coord.split(":")
-            insertPlanetData.append((player["id"], pId, pName, int(coord[0]), int(coord[1]), int(coord[2])))
+            insertPlanetData.append((player["id"], pId, pName, int(coord[0]), int(coord[1]), int(coord[2]), moonSize, moonName))
     print ""
 
     cur.executemany("""INSERT INTO `player` (`id`, `name`, `allianceId`, `status`) VALUES (?, ?, ?, ?)""", insertData)
-    cur.executemany("""INSERT INTO `planet` (`playerId`, `id`, `name`, `galaxy`, `system`, `position`) VALUES (?, ?, ?, ?, ?, ?)""",
+    cur.executemany("""INSERT INTO `planet` (`playerId`, `id`, `name`, `galaxy`, `system`, `position`, `moonSize`, `moonName`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             insertPlanetData)
 
 

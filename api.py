@@ -187,7 +187,13 @@ class Api(object):
 
         planets = []
         for planEl in root.findall(".//planet"):
-            planets.append((planEl.get("coords"), planEl.get("name"), planEl.get("id")))
+            moonName = ""
+            moonSize = 0
+            moon = planEl.find(".//moon")
+            if moon is not None:
+                moonName = moon.get("name")
+                moonSize = int(moon.get("size"))
+            planets.append((planEl.get("coords"), planEl.get("name"), planEl.get("id"), moonName, moonSize))
         player_info["planets"] = planets
 
         ally = root.findall(".//alliance")
@@ -357,11 +363,15 @@ class Api(object):
                 new_t_str.append(line[1:])
             retStr.append("\n".join(new_t_str)+"\n")
 
-        t = PrettyTable(["Coord", "Name"])
+        t = PrettyTable(["Coord", "M", "Name"])
         t.align["Coord"] = "l"
+        t.align["Moon"] = "l"
         t.align["Name"] = "l"
         for planet in player_info["planets"]:
-            t.add_row([planet[0], planet[1]])
+            moonInfo = ""
+            if planet[4]:
+                moonInfo = "M%d" % planet[4]
+            t.add_row([planet[0], moonInfo, planet[1]])
         t.set_style(11)
         t_str = t.get_string(border=False, header=False, padding_width=1)
         # make the table horizontal wider

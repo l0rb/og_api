@@ -465,6 +465,11 @@ def duration(speed, distance, speedFactor=1, speedUni=1):
         return 999999999
     return round(3500 / speedFactor * (distance * 10 / speed)**0.5 + 10)
 
+# when given a sysamount it will return the amount of
+# galaxies, which have lower or equal flight duration
+def sysDurationEqualsGalaxy(sys):
+    return (sys*95+2700)/20000
+
 # convenience funtion for duration calculation in one go
 def easyDuration(coord1, coord2, shipId, research, speedFactor=1, speedUni=1):
     dist = distance(coord1, coord2)
@@ -605,3 +610,9 @@ if __name__ == "__main__":
 
     assert(getFilledCargo({"metal":300000,"crystal":250000,"deuterium":50000}, 600000) ==
             (25000, {'crystal': 250000, 'energy': 0, 'metal': 275000, 'deuterium': 50000}))
+
+    assert(floor(sysDurationEqualsGalaxy(3)) == 0)
+    assert(floor(sysDurationEqualsGalaxy(182)) == 0)
+    assert(floor(sysDurationEqualsGalaxy(183)) == 1)
+    assert(floor(sysDurationEqualsGalaxy(364)) == 1)
+    assert(floor(sysDurationEqualsGalaxy(398)) == 2)

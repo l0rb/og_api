@@ -243,23 +243,24 @@ def highscoreChange(server, player, hours=24):
 
 
 def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, maxScore=9999999, amount=50):
+    import math
     from prettytable import PrettyTable
+    from Constants import sysDurationEqualsGalaxy
     galaxy = int(position.split(":")[0])
     system = int(position.split(":")[1])
     minSys = system-radius
     maxSys = system+radius
-    minGala= galaxy
-    maxGala= galaxy
-    if radius>182: # based on flighttime the neighboring galaxies are within this radius
-      minGala= galaxy-1
-      maxGala= galaxy+1
+    # when the radius is so big, that the flight to another galaxy has a shorter duration
+    # look at the other galaxy too
+    minGala= galaxy-math.floor(sysDurationEqualsGalaxy(radius))
+    maxGala= galaxy+math.floor(sysDurationEqualsGalaxy(radius))
     q = """SELECT player.id, player.name, player.score0, score_inactivity.duration, planet.galaxy,planet.system,planet.position
     FROM player,planet,score_inactivity
     WHERE score_inactivity.playerId = player.id AND planet.playerId=player.id
     AND player.status NOT LIKE "%%i%%" AND player.status NOT LIKE "%%I%%" AND player.status NOT LIKE "%%v%%"
     AND score_inactivity.duration >= %d
     AND player.score0>%d AND player.score0<%d
-    AND planet.galaxy>=%d AND planet.galaxy<=maxGala AND planet.system>=%d AND planet.system<=%d
+    AND planet.galaxy>=%d AND planet.galaxy<=%d AND planet.system>=%d AND planet.system<=%d
     ORDER BY score_inactivity.duration DESC, player.score0 DESC, player.id
         """ % (duration, minScore, maxScore, minGala, maxGala, minSys, maxSys)
     rows = query(q)

@@ -248,15 +248,20 @@ def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, 
     system = int(position.split(":")[1])
     minSys = system-radius
     maxSys = system+radius
+    minGala= galaxy
+    maxGala= galaxy
+    if radius>182: # based on flighttime the neighboring galaxies are within this radius
+      minGala= galaxy-1
+      maxGala= galaxy+1
     q = """SELECT player.id, player.name, player.score0, score_inactivity.duration, planet.galaxy,planet.system,planet.position
     FROM player,planet,score_inactivity
     WHERE score_inactivity.playerId = player.id AND planet.playerId=player.id
     AND player.status NOT LIKE "%%i%%" AND player.status NOT LIKE "%%I%%" AND player.status NOT LIKE "%%v%%"
     AND score_inactivity.duration >= %d
     AND player.score0>%d AND player.score0<%d
-    AND planet.galaxy=%d AND planet.system>%d AND planet.system<%d
+    AND planet.galaxy>=%d AND planet.galaxy<=maxGala AND planet.system>=%d AND planet.system<=%d
     ORDER BY score_inactivity.duration DESC, player.score0 DESC, player.id
-        """ % (duration, minScore, maxScore, galaxy, minSys, maxSys)
+        """ % (duration, minScore, maxScore, minGala, maxGala, minSys, maxSys)
     rows = query(q)
     if len(rows) == 0:
         return ""

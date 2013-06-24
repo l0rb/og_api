@@ -55,7 +55,8 @@ def realy_handle_command(command, connection=False, target=False):
         retStr.append(u"!which met kris deut [plasma] [temp] [kurs] - gibt Vorschlag welche Mine am besten zu bauen ist - help which für mehr")
         retStr.append(u"!awhich same as which, but a bit more detailed")
         retStr.append(u"!diff playername [hours] - highscore diff")
-        retStr.append(u"!inactive yourpos [radius] [duration] [minscore] [maxscore] - finds inactive")
+        retStr.append(u"!inactive yourpos [radius] [duration] [minscore] [maxscore] [maxdefperplanet]- finds inactive")
+        retStr.append(u"!dinactive yourpos [radius] [duration] [maxdefperplanet] - finds inactive")
 
     elif command == "help which":
         retStr.append(u"Beispielaufruf: !which 18 15 12 für met=18,kris=15 und deut=12 - plasmatech=0 und maximale temperatur=50 da nicht angegeben, kurs=2:1:1")
@@ -122,7 +123,7 @@ def realy_handle_command(command, connection=False, target=False):
                 break
             retStr.append(str(line).replace("\n", "")[:406]+" ...")
 
-    elif command.startswith("inactive") or command.startswith("ainactive"):
+    elif command.startswith("inactive") or command.startswith("ainactive") or command.startswith("dinactive"):
         args = command[9:].split(" ")
         import db
         amount = 6
@@ -133,8 +134,9 @@ def realy_handle_command(command, connection=False, target=False):
         duration = 60*60*24
         minScore = 5000
         maxScore = 9999999
+        maxDef = 9999999
         if len(args) < 1 or args[0].find(":") == -1:
-            retStr.append("usage !inactive yourpos [radius] [duration] [minscore] [maxscore]")
+            retStr.append("usage !inactive yourpos [radius] [duration] [minscore] [maxscore] [maxdefperplanet]")
             retStr.append("example !inactive 3:338 15 2 5000 20000 - sucht alle planeten zwischen 3:323 und 3:353 wo spieler 2Tage inaktive und zw. 5k und 20k punkte hat")
         else:
             if len(args) > 0:
@@ -147,7 +149,15 @@ def realy_handle_command(command, connection=False, target=False):
                 minScore = int(args[3])
             if len(args) > 4:
                 maxScore = int(args[4])
-            retStr = "".join(db.listInactivityPlayer(position, radius, duration, minScore, maxScore, amount)).split("\n")
+            if len(args) > 5:
+                maxDef = int(args[5])
+        
+         if command.startswith("dinactive"):
+            maxDef= minScore
+            retStr = "".join(db.listInactivityPlayer(position, radius, duration, 5000, 999999, amount, maxDef)).split("\n")
+         else:
+            retStr = "".join(db.listInactivityPlayer(position, radius, duration, minScore, maxScore, amount, maxDef)).split("\n")
+
     elif command.startswith("diff"):
         args = command[5:].split(" ")
         import db

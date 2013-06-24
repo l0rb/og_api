@@ -242,7 +242,7 @@ def highscoreChange(server, player, hours=24):
     return "".join(retStr)
 
 
-def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, maxScore=9999999, amount=50):
+def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, maxScore=9999999, amount=50, maxDefPerPlanet=9999999):
     import math
     from prettytable import PrettyTable
     from Constants import sysDurationEqualsGalaxy
@@ -261,8 +261,9 @@ def listInactivityPlayer(position, radius=15, duration=60*60*24, minScore=5000, 
     AND score_inactivity.duration >= %d
     AND player.score0>%d AND player.score0<%d
     AND planet.galaxy>=%d AND planet.galaxy<=%d AND planet.system>=%d AND planet.system<=%d
+    AND (player.score1+player.score2+player.score3-player.score0)/(SELECT COUNT(planet.playerID) FROM planet WHERE planet.playerID=player.id)<%d
     ORDER BY score_inactivity.duration DESC, player.score0 DESC, player.id
-        """ % (duration, minScore, maxScore, minGala, maxGala, minSys, maxSys)
+        """ % (duration, minScore, maxScore, minGala, maxGala, minSys, maxSys, maxDefPerPlanet)
     rows = query(q)
     if len(rows) == 0:
         return ""

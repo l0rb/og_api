@@ -55,7 +55,7 @@ def realy_handle_command(command, connection=False, target=False):
         retStr.append(u"!which met kris deut [plasma] [temp] [kurs] - gibt Vorschlag welche Mine am besten zu bauen ist - help which für mehr")
         retStr.append(u"!awhich same as which, but a bit more detailed")
         retStr.append(u"!diff playername [hours] - highscore diff")
-        retStr.append(u"!inactive yourpos [radius] [duration] [minscore] [maxscore] [maxdefperplanet]- finds inactive")
+        retStr.append(u"!inactive yourpos [radius] [duration] [minscore] [maxscore] [maxdefperplanet]- finds inactive. use ainactive for more results")
         retStr.append(u"!dinactive yourpos [radius] [duration] [maxdefperplanet] - finds inactive")
 
     elif command == "help which":
@@ -127,7 +127,7 @@ def realy_handle_command(command, connection=False, target=False):
         args = command[9:].split(" ")
         import db
         amount = 6
-        if command.startswith("ainactive"):
+        if command.startswith("ainactive") or command.startswith("dinactive"):
             args = command[10:].split(" ")
             amount = 12
         radius = 15
